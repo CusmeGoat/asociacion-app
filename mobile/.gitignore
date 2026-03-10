@@ -43,3 +43,26 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Python backend
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+
+# Environment variables / secrets
+.env
+backend/.env
+mobile/.env
+
+# Flutter local/generated
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+
+# VS Code
+.vscode/
+
+# OS
+Thumbs.db
