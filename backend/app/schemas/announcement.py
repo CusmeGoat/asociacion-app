@@ -9,6 +9,17 @@ class AnnouncementCreate(BaseModel):
     category: str
 
 
+# ── NUEVO ─────────────────────────────────────────────────────────────────────
+# Todos los campos son opcionales: solo se actualizan los que se envíen.
+
+class AnnouncementUpdate(BaseModel):
+    title: str | None = None
+    content: str | None = None
+    category: str | None = None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+
 class AnnouncementResponse(BaseModel):
     id: int
     title: str

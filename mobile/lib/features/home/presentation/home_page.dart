@@ -25,11 +25,30 @@ class _HomePageState extends State<HomePage> {
   bool isLoadingAnnouncements = true;
   String announcementsError = '';
 
+  // Formulario crear / editar
   final titleController = TextEditingController();
   final contentController = TextEditingController();
-  final categoryController = TextEditingController();
+  String selectedFormCategory = 'GENERAL';
 
-  bool isPublishing = false;
+  // Filtros
+  final searchController = TextEditingController();
+  String selectedCategory = 'TODAS';
+  bool showInactive = false; // Solo ADMIN
+
+  final List<String> filterCategories = [
+    'TODAS',
+    'INSTITUCIONAL',
+    'Universitario',
+    'GENERAL',
+  ];
+
+  final List<String> formCategories = [
+    'INSTITUCIONAL',
+    'Universitario',
+    'GENERAL',
+  ];
+
+  bool isSubmitting = false;
 
   bool get isAdmin {
     final roles = widget.userData['roles'] as List<dynamic>;
@@ -42,6 +61,16 @@ class _HomePageState extends State<HomePage> {
     loadAnnouncements();
   }
 
+  @override
+  void dispose() {
+    searchController.dispose();
+    titleController.dispose();
+    contentController.dispose();
+    super.dispose();
+  }
+
+  // ── Carga ──────────────────────────────────────────────────────────────────
+
   Future<void> loadAnnouncements() async {
     setState(() {
       isLoadingAnnouncements = true;
@@ -49,58 +78,35 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final data = await announcementService.getAnnouncements(widget.token);
-
-      setState(() {
-        announcements = data;
-      });
+      final data = await announcementService.getAnnouncements(
+        widget.token,
+        category: selectedCategory,
+        search: searchController.text,
+        includeInactive: isAdmin && showInactive,
+      );
+      setState(() => announcements = data);
     } catch (e) {
       setState(() {
         announcementsError = e.toString().replaceFirst('Exception: ', '');
       });
     } finally {
-      setState(() {
-        isLoadingAnnouncements = false;
-      });
+      setState(() => isLoadingAnnouncements = false);
     }
   }
 
-  Future<void> publishAnnouncement() async {
+  void clearFilters() {
     setState(() {
-      isPublishing = true;
+      searchController.clear();
+      selectedCategory = 'TODAS';
+      showInactive = false;
     });
-
-    try {
-      await announcementService.createAnnouncement(
-        token: widget.token,
-        title: titleController.text,
-        content: contentController.text,
-        category: categoryController.text,
-      );
-
-      titleController.clear();
-      contentController.clear();
-      categoryController.clear();
-
-      if (!mounted) return;
-      Navigator.pop(context);
-
-      await loadAnnouncements();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-      );
-    } finally {
-      setState(() {
-        isPublishing = false;
-      });
-    }
+    loadAnnouncements();
   }
+
+  // ── Logout ─────────────────────────────────────────────────────────────────
 
   Future<void> logout() async {
     await SessionStorage.clearToken();
-
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
@@ -109,64 +115,205 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void openCreateAnnouncementDialog() {
+  // ── Diálogo crear / editar ─────────────────────────────────────────────────
+
+  void openCreateDialog() {
+    // Limpia el formulario antes de abrir
+    titleController.clear();
+    contentController.clear();
+    selectedFormCategory = formCategories.first;
+    _openAnnouncementDialog(existingItem: null);
+  }
+
+  void openEditDialog(Map<String, dynamic> item) {
+    titleController.text = item['title'] ?? '';
+    contentController.text = item['content'] ?? '';
+    // Si la categoría guardada no está en la lista, cae a GENERAL
+    selectedFormCategory = formCategories.contains(item['category'])
+        ? item['category']
+        : 'GENERAL';
+    _openAnnouncementDialog(existingItem: item);
+  }
+
+  void _openAnnouncementDialog({required Map<String, dynamic>? existingItem}) {
+    final isEditing = existingItem != null;
+
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Nuevo anuncio'),
-          content: SizedBox(
-            width: 450,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  TextField(
-                    controller: titleController,
-                    decoration: const InputDecoration(labelText: 'Título'),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(isEditing ? 'Editar anuncio' : 'Nuevo anuncio'),
+              content: SizedBox(
+                width: 450,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: titleController,
+                        decoration:
+                            const InputDecoration(labelText: 'Título', border: OutlineInputBorder()),
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedFormCategory,
+                        decoration: const InputDecoration(
+                            labelText: 'Categoría', border: OutlineInputBorder()),
+                        items: formCategories
+                            .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                            .toList(),
+                        onChanged: (v) =>
+                            setDialogState(() => selectedFormCategory = v ?? formCategories.first),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: contentController,
+                        maxLines: 4,
+                        decoration: const InputDecoration(
+                            labelText: 'Contenido', border: OutlineInputBorder()),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: categoryController,
-                    decoration: const InputDecoration(labelText: 'Categoría'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: contentController,
-                    maxLines: 4,
-                    decoration: const InputDecoration(labelText: 'Contenido'),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: isPublishing ? null : () => Navigator.pop(context),
-              child: const Text('Cancelar'),
-            ),
-            ElevatedButton(
-              onPressed: isPublishing ? null : publishAnnouncement,
-              child: isPublishing
-                  ? const SizedBox(
-                      height: 18,
-                      width: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Publicar'),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting ? null : () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                  onPressed: isSubmitting
+                      ? null
+                      : () async {
+                          setDialogState(() => isSubmitting = true);
+                          try {
+                            if (isEditing) {
+                              await announcementService.updateAnnouncement(
+                                token: widget.token,
+                                id: existingItem['id'],
+                                title: titleController.text,
+                                content: contentController.text,
+                                category: selectedFormCategory,
+                              );
+                            } else {
+                              await announcementService.createAnnouncement(
+                                token: widget.token,
+                                title: titleController.text,
+                                content: contentController.text,
+                                category: selectedFormCategory,
+                              );
+                            }
+
+                            if (!mounted) return;
+                            Navigator.pop(context);
+                            await loadAnnouncements();
+                            _showSnack(
+                              isEditing ? 'Anuncio actualizado' : 'Anuncio publicado',
+                              Colors.green,
+                            );
+                          } catch (e) {
+                            setDialogState(() => isSubmitting = false);
+                            _showSnack(
+                              e.toString().replaceFirst('Exception: ', ''),
+                              Colors.red,
+                            );
+                          } finally {
+                            if (mounted) setState(() => isSubmitting = false);
+                          }
+                        },
+                  child: isSubmitting
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(
+                          isEditing ? 'Guardar' : 'Publicar',
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
   }
 
-  @override
-  void dispose() {
-    titleController.dispose();
-    contentController.dispose();
-    categoryController.dispose();
-    super.dispose();
+  // ── Desactivar / Activar ───────────────────────────────────────────────────
+
+  Future<void> toggleActive(Map<String, dynamic> item) async {
+    final isActive = item['is_active'] as bool;
+    final action = isActive ? 'desactivar' : 'activar';
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('¿Confirmar $action?'),
+        content: Text(
+          isActive
+              ? 'El anuncio dejará de ser visible para los socios.'
+              : 'El anuncio volverá a estar visible para todos.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: isActive ? Colors.red : Colors.green,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              isActive ? 'Desactivar' : 'Activar',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      if (isActive) {
+        await announcementService.deactivateAnnouncement(
+          token: widget.token,
+          id: item['id'],
+        );
+        _showSnack('Anuncio desactivado', Colors.orange);
+      } else {
+        await announcementService.activateAnnouncement(
+          token: widget.token,
+          id: item['id'],
+        );
+        _showSnack('Anuncio activado', Colors.green);
+      }
+      await loadAnnouncements();
+    } catch (e) {
+      _showSnack(e.toString().replaceFirst('Exception: ', ''), Colors.red);
+    }
   }
+
+  // ── Snack helper ───────────────────────────────────────────────────────────
+
+  void _showSnack(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  // ── BUILD ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -178,9 +325,25 @@ class _HomePageState extends State<HomePage> {
         foregroundColor: Colors.white,
         title: const Text('Inicio'),
         actions: [
+          // Toggle ver inactivos — solo ADMIN
+          if (isAdmin)
+            Row(
+              children: [
+                const Text('Ver inactivos', style: TextStyle(fontSize: 13)),
+                Switch(
+                  value: showInactive,
+                  activeColor: Colors.white,
+                  onChanged: (v) {
+                    setState(() => showInactive = v);
+                    loadAnnouncements();
+                  },
+                ),
+                const SizedBox(width: 4),
+              ],
+            ),
           if (isAdmin)
             TextButton(
-              onPressed: openCreateAnnouncementDialog,
+              onPressed: openCreateDialog,
               child: const Text(
                 'Nuevo anuncio',
                 style: TextStyle(color: Colors.white),
@@ -188,10 +351,7 @@ class _HomePageState extends State<HomePage> {
             ),
           TextButton(
             onPressed: logout,
-            child: const Text(
-              'Salir',
-              style: TextStyle(color: Colors.white),
-            ),
+            child: const Text('Salir', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -202,6 +362,7 @@ class _HomePageState extends State<HomePage> {
             width: 900,
             child: ListView(
               children: [
+                // ── Card usuario ─────────────────────────────────────────────
                 Card(
                   elevation: 4,
                   child: Padding(
@@ -209,13 +370,9 @@ class _HomePageState extends State<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Usuario autenticado',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        const Text('Usuario autenticado',
+                            style: TextStyle(
+                                fontSize: 24, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 20),
                         Text('ID: ${widget.userData['id']}'),
                         Text('Nombres: ${widget.userData['nombres']}'),
@@ -228,53 +385,183 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
-                  'Tablón de anuncios',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                const Text('Tablón de anuncios',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+
+                // ── Filtros ──────────────────────────────────────────────────
+                Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Wrap(
+                      runSpacing: 12,
+                      spacing: 12,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 280,
+                          child: TextField(
+                            controller: searchController,
+                            decoration: const InputDecoration(
+                              labelText: 'Buscar anuncio',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 220,
+                          child: DropdownButtonFormField<String>(
+                            value: selectedCategory,
+                            decoration: const InputDecoration(
+                              labelText: 'Categoría',
+                              border: OutlineInputBorder(),
+                            ),
+                            items: filterCategories
+                                .map((item) => DropdownMenuItem(
+                                    value: item, child: Text(item)))
+                                .toList(),
+                            onChanged: (value) => setState(
+                                () => selectedCategory = value ?? 'TODAS'),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: loadAnnouncements,
+                          child: const Text('Filtrar'),
+                        ),
+                        OutlinedButton(
+                          onPressed: clearFilters,
+                          child: const Text('Limpiar'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
+
+                // ── Lista de anuncios ────────────────────────────────────────
                 if (isLoadingAnnouncements)
                   const Center(child: CircularProgressIndicator())
                 else if (announcementsError.isNotEmpty)
-                  Text(
-                    announcementsError,
-                    style: const TextStyle(color: Colors.red),
-                  )
+                  Text(announcementsError,
+                      style: const TextStyle(color: Colors.red))
                 else if (announcements.isEmpty)
                   const Text('No hay anuncios disponibles.')
                 else
-                  ...announcements.map(
-                    (item) => Card(
-                      elevation: 3,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['title'],
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text('Categoría: ${item['category']}'),
-                            Text('Publicado por: ${item['publisher_name']}'),
-                            Text('Fecha: ${item['created_at']}'),
-                            const SizedBox(height: 12),
-                            Text(item['content']),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
+                  ...announcements.map((item) => _AnnouncementCard(
+                        item: item,
+                        isAdmin: isAdmin,
+                        onEdit: () => openEditDialog(item),
+                        onToggleActive: () => toggleActive(item),
+                      )),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  TARJETA DE ANUNCIO
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AnnouncementCard extends StatelessWidget {
+  final Map<String, dynamic> item;
+  final bool isAdmin;
+  final VoidCallback onEdit;
+  final VoidCallback onToggleActive;
+
+  const _AnnouncementCard({
+    required this.item,
+    required this.isAdmin,
+    required this.onEdit,
+    required this.onToggleActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = item['is_active'] as bool? ?? true;
+
+    return Opacity(
+      opacity: isActive ? 1.0 : 0.55,
+      child: Card(
+        elevation: isActive ? 3 : 1,
+        margin: const EdgeInsets.only(bottom: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: isActive
+              ? BorderSide.none
+              : const BorderSide(color: Colors.red, width: 1),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Cabecera: título + acciones ────────────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item['title'],
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        // Badge "Inactivo" visible solo para ADMIN
+                        if (!isActive && isAdmin) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: const Text(
+                              'Inactivo',
+                              style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  // Botones editar / desactivar — solo ADMIN
+                  if (isAdmin) ...[
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Editar',
+                      color: Colors.blueGrey,
+                      onPressed: onEdit,
+                    ),
+                    IconButton(
+                      icon: Icon(isActive
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined),
+                      tooltip: isActive ? 'Desactivar' : 'Activar',
+                      color: isActive ? Colors.orange : Colors.green,
+                      onPressed: onToggleActive,
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text('Categoría: ${item['category']}'),
+              Text('Publicado por: ${item['publisher_name']}'),
+              Text('Fecha: ${item['created_at']}'),
+              const SizedBox(height: 12),
+              Text(item['content']),
+            ],
           ),
         ),
       ),
