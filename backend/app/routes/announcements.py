@@ -1,13 +1,23 @@
-from fastapi import APIRouter, Depends
+import os
+import shutil
+import uuid
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from app.core.deps import get_current_user, require_admin
 from app.db.database import get_db
 from app.models.announcement import Announcement
 from app.models.user import User
-from app.schemas.announcement import AnnouncementCreate, AnnouncementResponse
+from app.schemas.announcement import AnnouncementCreate, AnnouncementResponse, AnnouncementUpdate
 
 router = APIRouter(prefix="/announcements", tags=["announcements"])
+
+ALLOWED_CONTENT_TYPES = ["image/jpeg", "image/png", "application/octet-stream"]
+ALLOWED_EXTENSIONS = [".jpeg", ".jpg", ".png"]
+MAX_IMAGE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 def announcement_to_response(announcement: Announcement) -> AnnouncementResponse:
@@ -17,6 +27,7 @@ def announcement_to_response(announcement: Announcement) -> AnnouncementResponse
         content=announcement.content,
         category=announcement.category,
         is_active=announcement.is_active,
+        image_url=announcement.image_url,
         created_at=announcement.created_at,
         published_by=announcement.published_by,
         publisher_name=f"{announcement.publisher.nombres} {announcement.publisher.apellidos}",
@@ -46,14 +57,159 @@ def create_announcement(
 
 @router.get("/", response_model=list[AnnouncementResponse])
 def list_announcements(
+    category: str | None = None,
+    search: str | None = None,
+    include_inactive: bool = False,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    announcements = (
-        db.query(Announcement)
-        .filter(Announcement.is_active == True)
-        .order_by(Announcement.created_at.desc())
-        .all()
-    )
+    query = db.query(Announcement)
+
+    if not include_inactive or not any(role.name == "ADMIN" for role in current_user.roles):
+        query = query.filter(Announcement.is_active == True)
+        
+    if category:
+        query = query.filter(Announcement.category == category)
+        
+    if search:
+        query = query.filter(
+            or_(
+                Announcement.title.ilike(f"%{search}%"),
+                Announcement.content.ilike(f"%{search}%")
+            )
+        )
+
+    announcements = query.order_by(Announcement.created_at.desc()).all()
 
     return [announcement_to_response(item) for item in announcements]
+
+
+@router.put("/{id}", response_model=AnnouncementResponse)
+def update_announcement(
+    id: int,
+    data: AnnouncementUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    announcement = db.query(Announcement).filter(Announcement.id == id).first()
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Anuncio no encontrado")
+
+    if data.title is not None:
+        announcement.title = data.title
+    if data.content is not None:
+        announcement.content = data.content
+    if data.category is not None:
+        announcement.category = data.category
+
+    db.commit()
+    db.refresh(announcement)
+    return announcement_to_response(announcement)
+
+
+@router.patch("/{id}/deactivate", response_model=AnnouncementResponse)
+def deactivate_announcement(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    announcement = db.query(Announcement).filter(Announcement.id == id).first()
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Anuncio no encontrado")
+
+    announcement.is_active = False
+    db.commit()
+    db.refresh(announcement)
+    return announcement_to_response(announcement)
+
+
+@router.patch("/{id}/activate", response_model=AnnouncementResponse)
+def activate_announcement(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    announcement = db.query(Announcement).filter(Announcement.id == id).first()
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Anuncio no encontrado")
+
+    announcement.is_active = True
+    db.commit()
+    db.refresh(announcement)
+    return announcement_to_response(announcement)
+
+
+@router.patch("/{id}/image", response_model=AnnouncementResponse)
+async def upload_image(
+    id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    announcement = db.query(Announcement).filter(Announcement.id == id).first()
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Anuncio no encontrado")
+
+    # Validación de imagen
+    file_ext = os.path.splitext((file.filename or "").lower())[1]
+    content_type_ok = file.content_type in ALLOWED_CONTENT_TYPES
+    extension_ok = file_ext in ALLOWED_EXTENSIONS
+    
+    if not content_type_ok and not extension_ok:
+        raise HTTPException(status_code=415, detail="Solo se permiten archivos PNG o JPG.")
+
+    # Validar tamaño (lee el contenido y luego regresa el puntero)
+    contents = await file.read()
+    if len(contents) > MAX_IMAGE_SIZE:
+        raise HTTPException(status_code=413, detail="La imagen no debe superar los 10MB.")
+    
+    await file.seek(0)  # Resetear el puntero para guardar
+
+    # Generar nombre de archivo único
+    new_filename = f"{uuid.uuid4().hex}{file_ext}"
+    file_path = os.path.join("static", "images", new_filename)
+
+    # Eliminar imagen anterior si existe
+    if announcement.image_url:
+        old_filename = announcement.image_url.split("/")[-1]
+        old_path = os.path.join("static", "images", old_filename)
+        if os.path.exists(old_path):
+            try:
+                os.remove(old_path)
+            except Exception:
+                pass
+
+    # Guardar nueva imagen
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    announcement.image_url = f"/static/images/{new_filename}"
+    db.commit()
+    db.refresh(announcement)
+    return announcement_to_response(announcement)
+
+
+@router.delete("/{id}/image", response_model=AnnouncementResponse)
+def delete_image(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin),
+):
+    announcement = db.query(Announcement).filter(Announcement.id == id).first()
+    if not announcement:
+        raise HTTPException(status_code=404, detail="Anuncio no encontrado")
+
+    if announcement.image_url:
+        old_filename = announcement.image_url.split("/")[-1]
+        old_path = os.path.join("static", "images", old_filename)
+        if os.path.exists(old_path):
+            try:
+                os.remove(old_path)
+            except Exception:
+                pass
+
+        announcement.image_url = None
+        db.commit()
+        db.refresh(announcement)
+
+    return announcement_to_response(announcement)

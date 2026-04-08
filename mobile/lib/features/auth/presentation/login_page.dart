@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/storage/session_storage.dart';
 import '../../home/presentation/home_page.dart';
 import '../services/auth_service.dart';
+import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -122,6 +123,18 @@ class _LoginPageState extends State<LoginPage> {
                             )
                           : const Text('Entrar'),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const RegisterPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('¿No tienes cuenta? Regístrate'),
                   ),
                 ],
               ),

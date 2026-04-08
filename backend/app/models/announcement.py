@@ -13,6 +13,7 @@ class Announcement(Base):
     content = Column(Text, nullable=False)
     category = Column(String(50), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
+    image_url = Column(String(300), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     published_by = Column(Integer, ForeignKey("users.id"), nullable=False)
 
