@@ -15,6 +15,7 @@ def user_to_response(user: User) -> UserResponse:
         id=user.id,
         nombres=user.nombres,
         apellidos=user.apellidos,
+        cedula=user.cedula,
         email=user.email,
         is_active=user.is_active,
         created_at=user.created_at,
@@ -37,6 +38,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = User(
         nombres=user.nombres,
         apellidos=user.apellidos,
+        cedula=user.cedula,
         email=user.email,
         password_hash=hashed_password,
         is_active=True,

@@ -9,10 +9,11 @@ from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
 from app.db.database import Base, engine, test_connection
-from app.models import Announcement, Role, User  # noqa: F401
+from app.models import Announcement, Role, User, DocumentChunk  # noqa: F401
 from app.routes.announcements import router as announcements_router
 from app.routes.auth import router as auth_router
 from app.routes.users import router as users_router
+from app.routes.documents import router as documents_router
 
 
 def seed_roles():
@@ -49,6 +50,7 @@ app.add_middleware(
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(announcements_router)
+app.include_router(documents_router)
 
 
 @app.get("/")
