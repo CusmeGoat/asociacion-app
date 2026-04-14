@@ -5,6 +5,7 @@ import '../../../core/storage/session_storage.dart';
 import '../../../core/config/api_config.dart';
 import '../../announcements/services/announcement_service.dart';
 import '../../auth/presentation/login_page.dart';
+import '../../chat/presentation/chat_page.dart';
 
 class HomePage extends StatefulWidget {
   final String token;
@@ -246,7 +247,31 @@ class _HomePageState extends State<HomePage> {
                     },
                     contentPadding: EdgeInsets.zero,
                   ),
-                ]
+                ],
+                const Spacer(),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatPage(token: widget.token),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    label: const Text('Preguntar al Asistente'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[800],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      )
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
