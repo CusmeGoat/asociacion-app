@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'core/storage/session_storage.dart';
+import 'features/auth/presentation/force_change_password_page.dart';
 import 'features/auth/presentation/login_page.dart';
 import 'features/auth/services/auth_service.dart';
 import 'features/home/presentation/home_page.dart';
@@ -58,15 +59,27 @@ class _SplashPageState extends State<SplashPage> {
       final userData = await authService.getMe(token);
 
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomePage(
-            token: token,
-            userData: userData,
+      if (userData['must_change_password'] == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ForceChangePasswordPage(
+              token: token,
+              userData: userData,
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => HomePage(
+              token: token,
+              userData: userData,
+            ),
+          ),
+        );
+      }
     } catch (_) {
       await SessionStorage.clearToken();
 

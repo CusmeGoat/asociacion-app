@@ -5,6 +5,7 @@ import '../../../core/storage/session_storage.dart';
 import '../../../core/config/api_config.dart';
 import '../../announcements/services/announcement_service.dart';
 import '../../auth/presentation/login_page.dart';
+import '../../users/presentation/users_page.dart';
 import '../../chat/presentation/chat_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -131,12 +132,23 @@ class _HomePageState extends State<HomePage> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
-          if (isAdmin)
+          if (isAdmin) ...[
+            TextButton.icon(
+              icon: const Icon(Icons.people, color: Colors.white),
+              label: const Text('Gestión de Usuarios', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => UsersPage(token: widget.token)),
+                );
+              },
+            ),
             TextButton.icon(
               icon: const Icon(Icons.add, color: Colors.white),
               label: const Text('Nuevo anuncio', style: TextStyle(color: Colors.white)),
               onPressed: () => showAnnouncementDialog(),
             ),
+          ],
           TextButton.icon(
             icon: const Icon(Icons.exit_to_app, color: Colors.white),
             label: const Text('Salir', style: TextStyle(color: Colors.white)),

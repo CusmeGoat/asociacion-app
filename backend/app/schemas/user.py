@@ -19,7 +19,16 @@ class UserResponse(BaseModel):
     cedula: str | None = None
     email: str
     is_active: bool
+    must_change_password: bool = False
     created_at: datetime | None = None
     roles: list[str]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserRoleUpdate(BaseModel):
+    role_name: str
+
+
+class UserTempPasswordResponse(BaseModel):
+    temp_password: str

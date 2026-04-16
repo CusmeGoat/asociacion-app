@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/storage/session_storage.dart';
 import '../../home/presentation/home_page.dart';
 import '../services/auth_service.dart';
+import 'force_change_password_page.dart';
 import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -39,15 +40,27 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => HomePage(
-            token: token,
-            userData: userData,
+      if (userData['must_change_password'] == true) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ForceChangePasswordPage(
+              token: token,
+              userData: userData,
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => HomePage(
+              token: token,
+              userData: userData,
+            ),
+          ),
+        );
+      }
     } catch (e) {
       setState(() {
         errorMessage = e.toString().replaceFirst('Exception: ', '');

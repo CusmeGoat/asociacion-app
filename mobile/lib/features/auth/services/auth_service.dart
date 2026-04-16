@@ -70,4 +70,25 @@ class AuthService {
 
     return jsonDecode(response.body);
   }
+
+  Future<void> updatePassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/update-password'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'new_password': newPassword.trim(),
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['detail'] ?? 'Error al actualizar la contraseña');
+    }
+  }
 }
