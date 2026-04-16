@@ -55,6 +55,19 @@ app.include_router(documents_router)
 app.include_router(chatbot_router)
 
 
+# Creación automática de carpetas para archivos estáticos
+images_dir = os.path.join(os.path.dirname(__file__), "static", "images")
+os.makedirs(images_dir, exist_ok=True)
+
+documents_dir = os.path.join(os.path.dirname(__file__), "static", "documents")
+os.makedirs(documents_dir, exist_ok=True)
+
+
+# Montar la carpeta static completa o subcarpetas específicas
+app.mount("/static/images", StaticFiles(directory=images_dir), name="images")
+app.mount("/static/documents", StaticFiles(directory=documents_dir), name="documents")
+
+
 @app.get("/")
 def read_root():
     return {"message": "Backend funcionando correctamente"}

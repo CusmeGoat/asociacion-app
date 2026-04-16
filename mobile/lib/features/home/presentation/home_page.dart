@@ -5,6 +5,7 @@ import '../../../core/storage/session_storage.dart';
 import '../../../core/config/api_config.dart';
 import '../../announcements/services/announcement_service.dart';
 import '../../auth/presentation/login_page.dart';
+import '../../documents/presentation/documents_page.dart';
 import '../../users/presentation/users_page.dart';
 import '../../chat/presentation/chat_page.dart';
 
@@ -140,6 +141,16 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => UsersPage(token: widget.token)),
+                );
+              },
+            ),
+            TextButton.icon(
+              icon: const Icon(Icons.library_books, color: Colors.white),
+              label: const Text('Biblioteca y Docs', style: TextStyle(color: Colors.white)),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => DocumentsPage(token: widget.token)),
                 );
               },
             ),

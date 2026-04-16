@@ -20,4 +20,5 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     roles = relationship("Role", secondary=user_roles, back_populates="users")
+    documents = relationship("Document", back_populates="uploader")
     announcements = relationship("Announcement", back_populates="publisher")
