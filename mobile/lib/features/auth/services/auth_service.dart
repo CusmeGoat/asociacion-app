@@ -42,7 +42,6 @@ class AuthService {
         'apellidos': apellidos.trim(),
         'email': email.trim(),
         'password': password,
-        'role_name': 'SOCIO',
         'cedula': cedula,
       }),
     );
@@ -89,6 +88,40 @@ class AuthService {
     if (response.statusCode != 200) {
       final body = jsonDecode(response.body);
       throw Exception(body['detail'] ?? 'Error al actualizar la contraseña');
+    }
+  }
+
+  Future<Map<String, dynamic>> forgotPassword(String email) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/forgot-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email.trim()}),
+    );
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['detail'] ?? 'Error al solicitar restablecimiento');
+    }
+
+    return jsonDecode(response.body);
+  }
+
+  Future<void> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'token': token,
+        'new_password': newPassword.trim(),
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['detail'] ?? 'Error al restablecer la contraseña');
     }
   }
 }

@@ -200,7 +200,7 @@ class _UsersPageState extends State<UsersPage> {
                   value: selectedRole,
                   items: const [
                     DropdownMenuItem(value: null, child: Text('Todos')),
-                    DropdownMenuItem(value: 'ADMIN', child: Text('Admin')),
+                    DropdownMenuItem(value: 'SECRETARIO', child: Text('Secretario')),
                     DropdownMenuItem(value: 'SOCIO', child: Text('Socio')),
                   ],
                   onChanged: (val) {
@@ -259,7 +259,7 @@ class _UsersPageState extends State<UsersPage> {
                             ],
                             rows: users.map((u) {
                               final roles = u['roles'] as List<dynamic>;
-                              final isAdmin = roles.contains('ADMIN');
+                              final isSecretario = roles.contains('SECRETARIO');
                               final isActive = u['is_active'] == true;
                               final mustChange = u['must_change_password'] == true;
 
@@ -288,14 +288,14 @@ class _UsersPageState extends State<UsersPage> {
                                 DataCell(
                                   DropdownButtonHideUnderline(
                                     child: DropdownButton<String>(
-                                      value: isAdmin ? 'ADMIN' : 'SOCIO',
+                                      value: isSecretario ? 'SECRETARIO' : 'SOCIO',
                                       icon: const Icon(Icons.arrow_drop_down, size: 16),
                                       style: TextStyle(
-                                        color: isAdmin ? Colors.blueGrey : Colors.blue,
+                                        color: isSecretario ? Colors.blueGrey : Colors.blue,
                                         fontWeight: FontWeight.bold,
                                       ),
                                       items: const [
-                                        DropdownMenuItem(value: 'ADMIN', child: Text('ADMIN')),
+                                        DropdownMenuItem(value: 'SECRETARIO', child: Text('SECRETARIO')),
                                         DropdownMenuItem(value: 'SOCIO', child: Text('SOCIO')),
                                       ],
                                       onChanged: (val) {

@@ -22,3 +22,4 @@ class User(Base):
     roles = relationship("Role", secondary=user_roles, back_populates="users")
     documents = relationship("Document", back_populates="uploader")
     announcements = relationship("Announcement", back_populates="publisher")
+    notifications = relationship("Notification", back_populates="user")

@@ -5,6 +5,7 @@ import '../../home/presentation/home_page.dart';
 import '../services/auth_service.dart';
 import 'force_change_password_page.dart';
 import 'register_page.dart';
+import 'forgot_password_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -138,6 +139,18 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ForgotPasswordPage(),
+                        ),
+                      );
+                    },
+                    child: const Text('¿Olvidaste tu contraseña?'),
+                  ),
+                  const SizedBox(height: 4),
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacement(

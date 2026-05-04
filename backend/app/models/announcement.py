@@ -12,6 +12,7 @@ class Announcement(Base):
     title = Column(String(150), nullable=False)
     content = Column(Text, nullable=False)
     category = Column(String(50), nullable=False)
+    otros_subtype = Column(String(100), nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
     image_url = Column(String(300), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

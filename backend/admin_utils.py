@@ -3,8 +3,8 @@ Script de administración rápida de usuarios.
 Uso:
   Listar usuarios:           python admin_utils.py list
   Cambiar contraseña:        python admin_utils.py reset-password <email> <nueva_contraseña>
-  Dar rol ADMIN:             python admin_utils.py make-admin <email>
-  Quitar rol ADMIN:          python admin_utils.py remove-admin <email>
+  Dar rol SECRETARIO:        python admin_utils.py make-secretario <email>
+  Quitar rol SECRETARIO:     python admin_utils.py remove-secretario <email>
 """
 import sys
 import os
@@ -49,37 +49,37 @@ def reset_password(email: str, new_password: str):
         print(f"[OK] Contrasena actualizada correctamente para: {email}")
 
 
-def make_admin(email: str):
+def make_secretario(email: str):
     with Session(engine) as db:
         user = db.query(User).filter(User.email == email).first()
         if not user:
             print(f"[ERROR] No se encontro usuario con email: {email}")
             return
-        admin_role = db.query(Role).filter(Role.name == "ADMIN").first()
-        if not admin_role:
-            print("[ERROR] El rol ADMIN no existe en la base de datos.")
+        secretario_role = db.query(Role).filter(Role.name == "SECRETARIO").first()
+        if not secretario_role:
+            print("[ERROR] El rol SECRETARIO no existe en la base de datos.")
             return
-        if any(r.name == "ADMIN" for r in user.roles):
-            print(f"[AVISO] El usuario {email} ya tiene rol ADMIN.")
+        if any(r.name == "SECRETARIO" for r in user.roles):
+            print(f"[AVISO] El usuario {email} ya tiene rol SECRETARIO.")
             return
-        user.roles.append(admin_role)
+        user.roles.append(secretario_role)
         db.commit()
-        print(f"[OK] El usuario {email} ahora es ADMIN.")
+        print(f"[OK] El usuario {email} ahora es SECRETARIO.")
 
 
-def remove_admin(email: str):
+def remove_secretario(email: str):
     with Session(engine) as db:
         user = db.query(User).filter(User.email == email).first()
         if not user:
             print(f"[ERROR] No se encontro usuario con email: {email}")
             return
-        admin_role = next((r for r in user.roles if r.name == "ADMIN"), None)
-        if not admin_role:
-            print(f"[AVISO] El usuario {email} no tiene rol ADMIN.")
+        secretario_role = next((r for r in user.roles if r.name == "SECRETARIO"), None)
+        if not secretario_role:
+            print(f"[AVISO] El usuario {email} no tiene rol SECRETARIO.")
             return
-        user.roles.remove(admin_role)
+        user.roles.remove(secretario_role)
         db.commit()
-        print(f"[OK] Se removio el rol ADMIN de: {email}")
+        print(f"[OK] Se removio el rol SECRETARIO de: {email}")
 
 
 if __name__ == "__main__":
@@ -89,9 +89,9 @@ if __name__ == "__main__":
         list_users()
     elif args[0] == "reset-password" and len(args) == 3:
         reset_password(args[1], args[2])
-    elif args[0] == "make-admin" and len(args) == 2:
-        make_admin(args[1])
-    elif args[0] == "remove-admin" and len(args) == 2:
-        remove_admin(args[1])
+    elif args[0] == "make-secretario" and len(args) == 2:
+        make_secretario(args[1])
+    elif args[0] == "remove-secretario" and len(args) == 2:
+        remove_secretario(args[1])
     else:
         print(__doc__)

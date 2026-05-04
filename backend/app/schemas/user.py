@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class UserCreate(BaseModel):
@@ -9,7 +9,22 @@ class UserCreate(BaseModel):
     cedula: str
     email: str
     password: str
-    role_name: str
+
+    @field_validator("cedula")
+    @classmethod
+    def validate_cedula(cls, v):
+        if not v.isdigit():
+            raise ValueError("La cédula debe ser numérica")
+        if len(v) != 10:
+            raise ValueError("La cédula debe tener 10 dígitos")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError("La contraseña debe tener al menos 8 caracteres")
+        return v
 
 
 class UserResponse(BaseModel):

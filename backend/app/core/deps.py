@@ -39,13 +39,25 @@ def get_current_user(
     return user
 
 
-def require_admin(current_user: User = Depends(get_current_user)) -> User:
-    is_admin = any(role.name == "ADMIN" for role in current_user.roles)
+def require_secretario(current_user: User = Depends(get_current_user)) -> User:
+    is_secretario = any(role.name == "SECRETARIO" for role in current_user.roles)
 
-    if not is_admin:
+    if not is_secretario:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Solo ADMIN puede publicar anuncios",
+            detail="Solo SECRETARIO puede realizar esta acción",
+        )
+
+    return current_user
+
+
+def require_socio(current_user: User = Depends(get_current_user)) -> User:
+    is_socio = any(role.name == "SOCIO" for role in current_user.roles)
+
+    if not is_socio:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo SOCIO puede realizar esta acción",
         )
 
     return current_user

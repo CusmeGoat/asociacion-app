@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.database import Base
+
 
 class Document(Base):
     __tablename__ = "documents"
@@ -10,7 +11,8 @@ class Document(Base):
     filename = Column(String(255), nullable=False)
     file_path = Column(String(500), nullable=False)
     uploaded_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    status = Column(String(20), nullable=False, default="pendiente")
+    error_message = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Relación de vuelta al modelo de User
     uploader = relationship("User", back_populates="documents")

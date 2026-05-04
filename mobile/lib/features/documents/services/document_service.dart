@@ -52,4 +52,19 @@ class DocumentService {
       }
     }
   }
+
+  Future<void> deleteDocument({
+    required String token,
+    required int documentId,
+  }) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/documentos/$documentId'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body);
+      throw Exception(body['detail'] ?? 'Error al eliminar el documento');
+    }
+  }
 }
