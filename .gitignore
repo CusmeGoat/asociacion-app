@@ -1,14 +1,37 @@
 # Python
+venv/
 backend/venv/
 backend/__pycache__/
+__pycache__/
 *.pyc
+*.pyo
+*.pyd
 
 # Flutter / Dart
 mobile/.dart_tool/
 mobile/.packages
 mobile/build/
+mobile/android/build/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
+
+# Generated thesis/documentation artifacts
+*.docx
+*.pdf
+*.zip
+~$*
+/render*/
+/render-*/
+/generated_thesis_assets/
+/diagramas_editables/
+/diagramas_editables_v2/
+/arquitectura_editable_drawio/
+/tools/
+
+# Local uploaded/runtime files
+static/documents/
+static/announcements/
+static/uploads/
 
 # VS Code
 .vscode/

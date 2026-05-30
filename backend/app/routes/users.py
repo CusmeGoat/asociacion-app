@@ -1,13 +1,10 @@
-import random
-import string
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 
-from app.core.security import hash_password
-from app.core.deps import get_current_user, require_secretario
+from app.application.services.user_service import UserApplicationService
+from app.core.deps import require_secretario
 from app.db.database import get_db
-from app.models.role import Role
+from app.infrastructure.repositories import SqlAlchemyUserRepository
 from app.models.user import User
 from app.schemas.user import (
     UserCreate,
@@ -17,6 +14,10 @@ from app.schemas.user import (
 )
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+def build_user_service(db: Session) -> UserApplicationService:
+    return UserApplicationService(users=SqlAlchemyUserRepository(db))
 
 
 def user_to_response(user: User) -> UserResponse:
@@ -35,36 +36,8 @@ def user_to_response(user: User) -> UserResponse:
 
 @router.post("/", response_model=UserResponse)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    existing_email = db.query(User).filter(User.email == user.email).first()
-    if existing_email:
-        raise HTTPException(status_code=400, detail="El correo ya está registrado")
-
-    existing_cedula = db.query(User).filter(User.cedula == user.cedula).first()
-    if existing_cedula:
-        raise HTTPException(status_code=400, detail="La cédula ya está registrada")
-
-    socio_role = db.query(Role).filter(Role.name == "SOCIO").first()
-    if not socio_role:
-        raise HTTPException(status_code=500, detail="Error de configuración: rol SOCIO no existe")
-
-    hashed_password = hash_password(user.password)
-
-    db_user = User(
-        nombres=user.nombres,
-        apellidos=user.apellidos,
-        cedula=user.cedula,
-        email=user.email,
-        password_hash=hashed_password,
-        is_active=True,
-    )
-
-    db_user.roles.append(socio_role)
-
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-
-    return user_to_response(db_user)
+    created_user = build_user_service(db).create_user(user.model_dump())
+    return user_to_response(created_user)
 
 
 @router.get("/", response_model=list[UserResponse])
@@ -75,28 +48,8 @@ def list_users(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_secretario),
 ):
-    query = db.query(User)
-
-    if search:
-        query = query.filter(
-            or_(
-                User.nombres.ilike(f"%{search}%"),
-                User.apellidos.ilike(f"%{search}%"),
-                User.email.ilike(f"%{search}%"),
-                User.cedula.ilike(f"%{search}%"),
-            )
-        )
-
-    if is_active is not None:
-        query = query.filter(User.is_active == is_active)
-
-    users = query.all()
-
-    if role:
-        role_upper = role.upper()
-        users = [u for u in users if any(r.name == role_upper for r in u.roles)]
-
-    return [user_to_response(u) for u in users]
+    users = build_user_service(db).list_users(search=search, role=role, is_active=is_active)
+    return [user_to_response(user) for user in users]
 
 
 @router.patch("/{id}/activate", response_model=UserResponse)
@@ -105,13 +58,7 @@ def activate_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_secretario),
 ):
-    user = db.query(User).filter(User.id == id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
-    user.is_active = True
-    db.commit()
-    db.refresh(user)
+    user = build_user_service(db).activate_user(id)
     return user_to_response(user)
 
 
@@ -121,18 +68,7 @@ def deactivate_user(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_secretario),
 ):
-    if id == current_user.id:
-        raise HTTPException(
-            status_code=400, detail="No puedes desactivarte a ti mismo"
-        )
-
-    user = db.query(User).filter(User.id == id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
-    user.is_active = False
-    db.commit()
-    db.refresh(user)
+    user = build_user_service(db).deactivate_user(id, current_user.id)
     return user_to_response(user)
 
 
@@ -143,23 +79,7 @@ def upddate_user_role(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_secretario),
 ):
-    if id == current_user.id:
-        raise HTTPException(
-            status_code=400, detail="No puedes cambiar tu propio rol por seguridad"
-        )
-
-    user = db.query(User).filter(User.id == id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
-    role = db.query(Role).filter(Role.name == data.role_name.upper()).first()
-    if not role:
-        raise HTTPException(status_code=400, detail="El rol no existe")
-
-    user.roles.clear()
-    user.roles.append(role)
-    db.commit()
-    db.refresh(user)
+    user = build_user_service(db).update_role(id, data.role_name, current_user.id)
     return user_to_response(user)
 
 
@@ -169,16 +89,5 @@ def generate_temp_password(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_secretario),
 ):
-    user = db.query(User).filter(User.id == id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
-    characters = string.ascii_letters + string.digits
-    temp_password = "Temp" + "".join(random.choice(characters) for i in range(6)) + "!"
-
-    user.password_hash = hash_password(temp_password)
-    user.must_change_password = True
-
-    db.commit()
-
+    temp_password = build_user_service(db).generate_temp_password(id)
     return UserTempPasswordResponse(temp_password=temp_password)

@@ -8,10 +8,12 @@ load_dotenv()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
+from app.application.exceptions import ApplicationError
 from app.db.database import Base, engine, test_connection
 from app.models import (
     Announcement,
@@ -50,6 +52,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.exception_handler(ApplicationError)
+async def application_error_handler(request, exc: ApplicationError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
 
 os.makedirs("static/images", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
