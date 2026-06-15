@@ -1,0 +1,143 @@
+import fs from "fs";
+import path from "path";
+
+import { AppDataSource } from "../../config/data-source";
+import { env } from "../../config/env";
+import { AnnouncementEntity } from "../../infrastructure/persistence/entities/AnnouncementEntity";
+import { NotificationEntity } from "../../infrastructure/persistence/entities/NotificationEntity";
+import { UserEntity } from "../../infrastructure/persistence/entities/UserEntity";
+import { AppError } from "../../shared/errors/AppError";
+import { announcementResponse } from "../dto/responses";
+
+export class AnnouncementService {
+  private announcements = AppDataSource.getRepository(AnnouncementEntity);
+  private notifications = AppDataSource.getRepository(NotificationEntity);
+  private users = AppDataSource.getRepository(UserEntity);
+
+  async create(
+    input: {
+      title: string;
+      content: string;
+      category: string;
+      otros_subtype?: string | null;
+    },
+    currentUserId: number,
+  ) {
+    const announcement = await this.announcements.save(
+      this.announcements.create({
+        title: input.title,
+        content: input.content,
+        category: input.category,
+        otrosSubtype: input.otros_subtype ?? null,
+        isActive: true,
+        publishedBy: currentUserId,
+      }),
+    );
+
+    await this.createNotifications(announcement);
+    return announcementResponse(await this.findById(announcement.id));
+  }
+
+  async list(filters: {
+    categories?: string;
+    search?: string;
+    includeInactive?: boolean;
+    isSecretary: boolean;
+  }) {
+    const query = this.announcements
+      .createQueryBuilder("announcement")
+      .leftJoinAndSelect("announcement.publisher", "publisher")
+      .orderBy("announcement.created_at", "DESC");
+
+    if (!filters.includeInactive || !filters.isSecretary) {
+      query.andWhere("announcement.is_active = true");
+    }
+    if (filters.categories) {
+      query.andWhere("announcement.category IN (:...categories)", {
+        categories: filters.categories.split(",").map((item) => item.trim()),
+      });
+    }
+    if (filters.search) {
+      query.andWhere(
+        "(announcement.title ILIKE :search OR announcement.content ILIKE :search)",
+        { search: `%${filters.search}%` },
+      );
+    }
+
+    return (await query.getMany()).map(announcementResponse);
+  }
+
+  async update(
+    id: number,
+    input: Partial<{
+      title: string;
+      content: string;
+      category: string;
+      otros_subtype: string | null;
+      is_active: boolean;
+    }>,
+  ) {
+    const announcement = await this.findById(id);
+    announcement.title = input.title ?? announcement.title;
+    announcement.content = input.content ?? announcement.content;
+    announcement.category = input.category ?? announcement.category;
+    announcement.otrosSubtype =
+      input.otros_subtype === undefined ? announcement.otrosSubtype : input.otros_subtype;
+    announcement.isActive =
+      input.is_active === undefined ? announcement.isActive : input.is_active;
+    return announcementResponse(await this.announcements.save(announcement));
+  }
+
+  async setActive(id: number, active: boolean) {
+    const announcement = await this.findById(id);
+    announcement.isActive = active;
+    return announcementResponse(await this.announcements.save(announcement));
+  }
+
+  async setImage(id: number, file: Express.Multer.File) {
+    const announcement = await this.findById(id);
+    this.deleteImageFile(announcement.imageUrl);
+    announcement.imageUrl = `/static/images/${file.filename}`;
+    return announcementResponse(await this.announcements.save(announcement));
+  }
+
+  async deleteImage(id: number) {
+    const announcement = await this.findById(id);
+    this.deleteImageFile(announcement.imageUrl);
+    announcement.imageUrl = null;
+    return announcementResponse(await this.announcements.save(announcement));
+  }
+
+  private async createNotifications(announcement: AnnouncementEntity) {
+    const activeUsers = await this.users.find({ where: { isActive: true } });
+    const notifications = activeUsers.map((user) =>
+      this.notifications.create({
+        userId: user.id,
+        title: `Nuevo anuncio: ${announcement.title}`,
+        message: announcement.content.slice(0, 500),
+        announcementType: announcement.category,
+        announcementId: announcement.id,
+        isRead: false,
+      }),
+    );
+    await this.notifications.save(notifications);
+  }
+
+  private async findById(id: number) {
+    const announcement = await this.announcements.findOne({ where: { id } });
+    if (!announcement) {
+      throw new AppError(404, "Anuncio no encontrado");
+    }
+    return announcement;
+  }
+
+  private deleteImageFile(imageUrl: string | null) {
+    if (!imageUrl) return;
+    const filename = imageUrl.split("/").pop();
+    if (!filename) return;
+    const imagePath = path.join(process.cwd(), env.staticRoot, "images", filename);
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
+  }
+}
