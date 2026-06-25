@@ -29,11 +29,29 @@ export class SemanticServiceClient {
   }
 
   private async post<T = unknown>(path: string, body: unknown): Promise<T> {
-    const response = await fetch(`${env.semanticServiceUrl}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    let response: Response;
+    try {
+      response = await fetch(`${env.semanticServiceUrl}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      const unavailable =
+        error instanceof Error && (error.name === "AbortError" || error.message.includes("fetch failed"));
+      throw new AppError(
+        503,
+        unavailable
+          ? "Servicio semantico no disponible. Verifica que semantic-service este levantado en el puerto 8010."
+          : "No se pudo conectar con el servicio semantico documental.",
+      );
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) {
       const text = await response.text();

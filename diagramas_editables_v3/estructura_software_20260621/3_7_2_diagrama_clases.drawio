@@ -1,0 +1,121 @@
+<mxfile host="Electron" agent="Codex">
+  <diagram id="3_7_2_diagrama_clases" name="3.7.2 Clases">
+    <mxGraphModel dx="6614" dy="3973" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2562" pageHeight="1725" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Usuario" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#E3F2FD;strokeColor=#1565C0;fontColor=#1F2933;strokeWidth=2;fontSize=24;fontFamily=Helvetica;spacing=8;arcSize=5;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;font-size:24px&quot;&gt;&lt;b&gt;Usuario&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;- id: number&lt;br&gt;- nombres: string&lt;br&gt;- apellidos: string&lt;br&gt;- cedula: string&lt;br&gt;- email: string&lt;br&gt;- passwordHash: string&lt;br&gt;- isActive: boolean&lt;br&gt;- mustChangePassword: boolean&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;+ iniciarSesion()&lt;br&gt;+ cambiarContrasena()&lt;br&gt;+ consultarDocumentos()&lt;br&gt;+ consultarAsistente()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="448" width="478" x="-222" y="-569.5" as="geometry" />
+        </mxCell>
+        <mxCell id="Rol" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#E3F2FD;strokeColor=#1565C0;fontColor=#1F2933;strokeWidth=2;fontSize=24;fontFamily=Helvetica;spacing=8;arcSize=5;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;font-size:24px&quot;&gt;&lt;b&gt;Rol&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;- id: number&lt;br&gt;- name: string&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;+ asignar()&lt;br&gt;+ validarPermiso()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="225" width="356" x="607.5" y="-565" as="geometry" />
+        </mxCell>
+        <mxCell id="Documento" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#E8F5E9;strokeColor=#2E7D32;fontColor=#1F2933;strokeWidth=2;fontSize=24;fontFamily=Helvetica;spacing=8;arcSize=5;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;font-size:24px&quot;&gt;&lt;b&gt;Documento&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;- id: number&lt;br&gt;- filename: string&lt;br&gt;- filePath: string&lt;br&gt;- uploadedById: number&lt;br&gt;- status: DocumentStatus&lt;br&gt;- errorMessage: string | null&lt;br&gt;- createdAt: Date&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;+ subir()&lt;br&gt;+ cambiarEstado()&lt;br&gt;+ obtenerArchivo()&lt;br&gt;+ eliminar()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="450" width="475" x="548" y="-300" as="geometry" />
+        </mxCell>
+        <mxCell id="FragmentoDocumento" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#E8F5E9;strokeColor=#2E7D32;fontColor=#1F2933;strokeWidth=2;fontSize=24;fontFamily=Helvetica;spacing=8;arcSize=5;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;font-size:24px&quot;&gt;&lt;b&gt;FragmentoDocumento&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;- id: number&lt;br&gt;- documentName: string&lt;br&gt;- content: text&lt;br&gt;- embedding: vector(1024)&lt;br&gt;- pageNumber: number&lt;br&gt;- chunkIndex: number&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;+ calcularSimilitud()&lt;br&gt;+ recuperarContenido()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="350" width="538" x="1178" y="-250" as="geometry" />
+        </mxCell>
+        <mxCell id="AsistenteDocumental" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#F3E5F5;strokeColor=#6A3FA0;fontColor=#1F2933;strokeWidth=2;fontSize=24;fontFamily=Helvetica;spacing=8;arcSize=5;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;font-size:24px&quot;&gt;&lt;b&gt;AsistenteDocumental&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;- limiteFuentes: number&lt;br&gt;- modeloEmbeddings: string&lt;br&gt;- documentosIndexados: boolean&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;+ consultar(pregunta)&lt;br&gt;+ buscarFragmentos()&lt;br&gt;+ generarRespuestaDocumental()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="312" width="538" x="-42" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Anuncio" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#FFF3E0;strokeColor=#EF8C00;fontColor=#1F2933;strokeWidth=2;fontSize=24;fontFamily=Helvetica;spacing=8;arcSize=5;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;font-size:24px&quot;&gt;&lt;b&gt;Anuncio&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;- id: number&lt;br&gt;- title: string&lt;br&gt;- content: text&lt;br&gt;- category: string&lt;br&gt;- otrosSubtype: string | null&lt;br&gt;- isActive: boolean&lt;br&gt;- imageUrl: string | null&lt;br&gt;- createdAt: Date&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;+ publicar()&lt;br&gt;+ editar()&lt;br&gt;+ activar()&lt;br&gt;+ desactivar()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="462" width="475" x="-382" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="Notificacion" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#E0F2F1;strokeColor=#00897B;fontColor=#1F2933;strokeWidth=2;fontSize=24;fontFamily=Helvetica;spacing=8;arcSize=5;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;font-size:24px&quot;&gt;&lt;b&gt;Notificacion&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;- id: number&lt;br&gt;- userId: number&lt;br&gt;- title: string&lt;br&gt;- message: string&lt;br&gt;- announcementType: string&lt;br&gt;- announcementId: number | null&lt;br&gt;- isRead: boolean&lt;br&gt;- createdAt: Date&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;+ mostrar()&lt;br&gt;+ marcarComoLeida()&lt;br&gt;+ marcarTodasComoLeidas()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="462" width="538" x="468" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="TokenSesion" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#FFEBEE;strokeColor=#C62828;fontColor=#1F2933;strokeWidth=2;fontSize=24;fontFamily=Helvetica;spacing=8;arcSize=5;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;font-size:24px&quot;&gt;&lt;b&gt;TokenSesion&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;- id: number&lt;br&gt;- userId: number&lt;br&gt;- tokenHash: string&lt;br&gt;- expiresAt: Date&lt;br&gt;- revokedAt: Date | null&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;+ validar()&lt;br&gt;+ revocar()&lt;br&gt;+ expiro()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="350" width="450" x="-1151" y="-690" as="geometry" />
+        </mxCell>
+        <mxCell id="TokenRecuperacion" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#FFEBEE;strokeColor=#C62828;fontColor=#1F2933;strokeWidth=2;fontSize=24;fontFamily=Helvetica;spacing=8;arcSize=5;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;font-size:24px&quot;&gt;&lt;b&gt;TokenRecuperacion&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;- id: number&lt;br&gt;- userId: number&lt;br&gt;- token: string&lt;br&gt;- expiresAt: Date&lt;br&gt;- usedAt: Date | null&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;+ validar()&lt;br&gt;+ marcarUsado()&lt;br&gt;+ expiro()&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="350" width="488" x="-1170" y="-260" as="geometry" />
+        </mxCell>
+        <mxCell id="ServicioCorreo" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#F3E5F5;strokeColor=#6A3FA0;fontColor=#1F2933;strokeWidth=2;fontSize=24;fontFamily=Helvetica;spacing=8;arcSize=5;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;font-size:24px&quot;&gt;&lt;b&gt;ServicioCorreo&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;- smtpHost: string&lt;br&gt;- smtpPort: number&lt;br&gt;- smtpUser: string&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;+ enviarRecuperacion(usuario, token)&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="306" width="488" x="-1170" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="uml_user_role" edge="1" parent="1" source="Usuario" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1565C0;strokeWidth=2;fontSize=24;fontFamily=Helvetica;startArrow=none;endArrow=none;endFill=1;" target="Rol" value="*        *">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="466" y="-345" as="sourcePoint" />
+            <mxPoint x="597" y="-345" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uml_user_session" edge="1" parent="1" source="Usuario" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C62828;strokeWidth=2;fontSize=24;fontFamily=Helvetica;startArrow=none;endArrow=none;endFill=1;" target="TokenSesion" value="1     0..*">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="240" y="-58" as="sourcePoint" />
+            <mxPoint x="240" y="105" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uml_user_recovery" edge="1" parent="1" source="Usuario" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C62828;strokeWidth=2;fontSize=24;fontFamily=Helvetica;startArrow=none;endArrow=none;endFill=1;exitX=0;exitY=0.75;exitDx=0;exitDy=0;" target="TokenRecuperacion" value="1     0..*">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-462" y="-234" />
+              <mxPoint x="-462" y="-70" />
+            </Array>
+            <mxPoint x="466" y="-145" as="sourcePoint" />
+            <mxPoint x="840" y="105" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uml_recovery_email" edge="1" parent="1" source="TokenRecuperacion" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6A3FA0;strokeWidth=2;fontSize=24;fontFamily=Helvetica;startArrow=none;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="ServicioCorreo" value="usa">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="-926" y="350" as="sourcePoint" />
+            <mxPoint x="840" y="492" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uml_user_document" edge="1" parent="1" source="Usuario" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D32;strokeWidth=2;fontSize=24;fontFamily=Helvetica;startArrow=none;endArrow=none;endFill=1;" target="Documento" value="sube 1     0..*">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="508" y="-220" />
+              <mxPoint x="508" y="-220" />
+            </Array>
+            <mxPoint x="466" y="-114" as="sourcePoint" />
+            <mxPoint x="1140" y="-270" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uml_document_chunk" edge="1" parent="1" source="Documento" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D32;strokeWidth=2;fontSize=24;fontFamily=Helvetica;startArrow=diamond;startFill=1;endArrow=none;endFill=1;" target="FragmentoDocumento" value="1     0..*">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1616" y="-276" as="sourcePoint" />
+            <mxPoint x="1803" y="-276" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uml_user_assistant" edge="1" parent="1" source="Usuario" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6A3FA0;strokeWidth=2;fontSize=24;fontFamily=Helvetica;startArrow=none;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" target="AsistenteDocumental" value="consulta">
+          <mxGeometry relative="1" x="-0.1019" as="geometry">
+            <mxPoint x="-1" as="offset" />
+            <Array as="points">
+              <mxPoint x="93" y="-40" />
+              <mxPoint x="93" y="-40" />
+            </Array>
+            <mxPoint x="466" y="-195" as="sourcePoint" />
+            <mxPoint x="1140" y="218" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uml_assistant_chunk" edge="1" parent="1" source="AsistenteDocumental" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6A3FA0;strokeWidth=2;fontSize=24;fontFamily=Helvetica;startArrow=none;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;exitX=1.001;exitY=0.389;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" target="FragmentoDocumento" value="recupera 0..*">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="497" y="270" />
+              <mxPoint x="1447" y="270" />
+            </Array>
+            <mxPoint x="1678" y="186" as="sourcePoint" />
+            <mxPoint x="2028" y="-108" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uml_user_announcement" edge="1" parent="1" source="Usuario" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF8C00;strokeWidth=2;fontSize=24;fontFamily=Helvetica;startArrow=none;endArrow=none;endFill=1;" target="Anuncio" value="publica 1     0..*">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="-162" y="360" />
+              <mxPoint x="-162" y="360" />
+            </Array>
+            <mxPoint x="466" y="-82" as="sourcePoint" />
+            <mxPoint x="1140" y="661" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="uml_announcement_notification" edge="1" parent="1" source="Anuncio" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#00897B;strokeWidth=2;fontSize=24;fontFamily=Helvetica;startArrow=none;endArrow=none;endFill=1;" target="Notificacion" value="genera 1     0..*">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1616" y="661" as="sourcePoint" />
+            <mxPoint x="1803" y="661" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

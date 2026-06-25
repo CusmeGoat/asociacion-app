@@ -6,6 +6,7 @@ yarn-error.log
 # Metro / build outputs
 .metro/
 android/.gradle/
+android/app/.cxx/
 android/build/
 android/app/build/
 ios/Pods/

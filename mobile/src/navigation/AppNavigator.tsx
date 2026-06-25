@@ -13,16 +13,23 @@ import {NotificationsScreen} from '../screens/NotificationsScreen';
 import {RegisterScreen} from '../screens/RegisterScreen';
 import {ResetPasswordScreen} from '../screens/ResetPasswordScreen';
 import {UsersScreen} from '../screens/UsersScreen';
+import {colors} from '../styles';
 import {RootStackParamList} from './types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const screenOptions = {
+  headerShown: false,
+  animation: 'fade_from_bottom' as const,
+  contentStyle: {backgroundColor: colors.appBg},
+};
 
 export function AppNavigator() {
   const {user} = useAuth();
 
   if (!user) {
     return (
-      <Stack.Navigator>
+      <Stack.Navigator screenOptions={screenOptions}>
         <Stack.Screen name="Login" component={LoginScreen} options={{title: 'Login'}} />
         <Stack.Screen name="Register" component={RegisterScreen} options={{title: 'Registro'}} />
         <Stack.Screen
@@ -41,7 +48,7 @@ export function AppNavigator() {
 
   if (user.must_change_password) {
     return (
-      <Stack.Navigator>
+      <Stack.Navigator screenOptions={screenOptions}>
         <Stack.Screen
           name="ForceChangePassword"
           component={ForceChangePasswordScreen}
@@ -52,7 +59,7 @@ export function AppNavigator() {
   }
 
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="Home" component={HomeScreen} options={{title: 'Asociacion'}} />
       <Stack.Screen name="Chat" component={ChatScreen} options={{title: 'Asistente documental'}} />
       <Stack.Screen name="Documents" component={DocumentsScreen} options={{title: 'Documentos'}} />

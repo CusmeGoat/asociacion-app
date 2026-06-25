@@ -35,10 +35,15 @@ export function announcementResponse(announcement: AnnouncementEntity) {
 }
 
 export function documentResponse(document: DocumentEntity) {
+  const filePath = `/static/documents/${encodeURIComponent(document.filename)}`;
+  const previewPath = `/documentos/public/${document.id}/ver`;
+
   return {
     id: document.id,
     filename: document.filename,
-    file_path: `static/documents/${document.filename}`,
+    file_path: filePath,
+    preview_url: previewPath,
+    download_url: previewPath,
     uploaded_by_id: document.uploadedById,
     uploader_name: document.uploader
       ? `${document.uploader.nombres} ${document.uploader.apellidos}`

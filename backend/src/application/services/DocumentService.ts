@@ -50,7 +50,7 @@ export class DocumentService {
       throw new AppError(404, "Documento no encontrado");
     }
 
-    const absolutePath = path.join(process.cwd(), document.filePath);
+    const absolutePath = this.resolveDocumentFilePath(document);
     if (fs.existsSync(absolutePath)) {
       fs.unlinkSync(absolutePath);
     }
@@ -66,6 +66,51 @@ export class DocumentService {
       status: "ok",
       message: `Documento '${document.filename}' eliminado correctamente.`,
     };
+  }
+
+  async getFile(documentId: number) {
+    const document = await this.documents.findOne({ where: { id: documentId } });
+    if (!document) {
+      throw new AppError(404, "Documento no encontrado");
+    }
+
+    const absolutePath = this.resolveDocumentFilePath(document);
+
+    if (!fs.existsSync(absolutePath)) {
+      throw new AppError(
+        404,
+        "El archivo PDF no existe en el servidor. Vuelve a cargar o sincronizar el documento.",
+      );
+    }
+
+    return {
+      absolutePath,
+      filename: document.filename,
+    };
+  }
+
+  private resolveDocumentFilePath(document: DocumentEntity) {
+    const documentsRoot = path.resolve(process.cwd(), env.staticRoot, "documents");
+    const storedPath = path.isAbsolute(document.filePath)
+      ? document.filePath
+      : path.resolve(process.cwd(), document.filePath);
+    const candidates = [
+      storedPath,
+      path.resolve(documentsRoot, path.basename(document.filePath)),
+      path.resolve(documentsRoot, document.filename),
+    ];
+
+    for (const candidate of [...new Set(candidates)]) {
+      const absolutePath = path.resolve(candidate);
+      const insideDocumentsRoot =
+        absolutePath === documentsRoot || absolutePath.startsWith(`${documentsRoot}${path.sep}`);
+
+      if (insideDocumentsRoot && fs.existsSync(absolutePath)) {
+        return absolutePath;
+      }
+    }
+
+    return path.resolve(documentsRoot, document.filename);
   }
 
   private async indexInBackground(document: DocumentEntity) {

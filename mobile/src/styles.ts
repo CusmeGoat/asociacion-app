@@ -2,17 +2,32 @@ import {StyleSheet} from 'react-native';
 
 export const colors = {
   green: '#2e7d32',
+  greenDark: '#1b5e20',
+  greenMid: '#3f9142',
   greenSoft: '#e8f5e9',
+  rice: '#f7f3dc',
+  riceGold: '#c9a227',
+  riceSoft: '#fff8df',
+  surface: '#ffffff',
+  appBg: '#f4f7f2',
   ink: '#1f2933',
   muted: '#617080',
   line: '#d9e2ec',
   danger: '#c62828',
   warning: '#f57c00',
+  success: '#2e7d32',
+  info: '#1565c0',
 };
 
 export const styles = StyleSheet.create({
   screen: {flex: 1, backgroundColor: '#f7fafc', padding: 16},
-  center: {flex: 1, alignItems: 'center', justifyContent: 'center'},
+  center: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.appBg,
+    padding: 18,
+  },
   title: {fontSize: 24, fontWeight: '700', color: colors.ink, marginBottom: 16},
   subtitle: {fontSize: 14, color: colors.muted, marginBottom: 12},
   input: {

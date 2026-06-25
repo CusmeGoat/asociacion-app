@@ -1,0 +1,111 @@
+<mxfile host="Electron" agent="Codex">
+  <diagram id="3_7_1_diagrama_entidad_relacion" name="3.7.1 DER">
+    <mxGraphModel dx="2026" dy="1124" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2050" pageHeight="1260" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="roles" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#E3F2FD;strokeColor=#1565C0;fontColor=#1F2933;strokeWidth=2;fontSize=14;spacing=8;arcSize=4;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;roles&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;&lt;font size=&quot;3&quot;&gt;PK id: serial&lt;br&gt;name: varchar(50) unique&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="145" width="310" x="70" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="user_roles" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#F3E5F5;strokeColor=#6A3FA0;fontColor=#1F2933;strokeWidth=2;fontSize=14;spacing=8;arcSize=4;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;user_roles&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;&lt;font size=&quot;3&quot;&gt;PK/FK user_id: integer&lt;br&gt;PK/FK role_id: integer&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="150" width="330" x="505" y="245" as="geometry" />
+        </mxCell>
+        <mxCell id="users" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#E3F2FD;strokeColor=#1565C0;fontColor=#1F2933;strokeWidth=2;fontSize=14;spacing=8;arcSize=4;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;users&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;&lt;font size=&quot;3&quot;&gt;PK id: serial&lt;br&gt;nombres: varchar(100)&lt;br&gt;apellidos: varchar(100)&lt;br&gt;cedula: varchar(20) null&lt;br&gt;email: varchar(150) unique&lt;br&gt;password_hash: varchar(255)&lt;br&gt;is_active: boolean&lt;br&gt;must_change_password: boolean&lt;br&gt;created_at: timestamptz&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="350" width="380" x="70" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="refresh_tokens" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#FFEBEE;strokeColor=#C62828;fontColor=#1F2933;strokeWidth=2;fontSize=14;spacing=8;arcSize=4;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;refresh_tokens&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;&lt;font size=&quot;3&quot;&gt;PK id: serial&lt;br&gt;FK user_id: integer&lt;br&gt;token_hash: varchar(255) unique&lt;br&gt;expires_at: timestamptz&lt;br&gt;revoked_at: timestamptz null&lt;br&gt;created_at: timestamptz&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="220" width="380" x="70" y="970" as="geometry" />
+        </mxCell>
+        <mxCell id="password_reset_tokens" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#FFEBEE;strokeColor=#C62828;fontColor=#1F2933;strokeWidth=2;fontSize=14;spacing=8;arcSize=4;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;password_reset_tokens&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;&lt;font size=&quot;3&quot;&gt;PK id: serial&lt;br&gt;FK user_id: integer&lt;br&gt;token: varchar(255) unique&lt;br&gt;expires_at: timestamptz&lt;br&gt;used_at: timestamptz null&lt;br&gt;created_at: timestamptz&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="220" width="390" x="505" y="970" as="geometry" />
+        </mxCell>
+        <mxCell id="documents" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#E8F5E9;strokeColor=#2E7D32;fontColor=#1F2933;strokeWidth=2;fontSize=14;spacing=8;arcSize=4;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;documents&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;&lt;font size=&quot;3&quot;&gt;PK id: serial&lt;br&gt;filename: varchar(255)&lt;br&gt;file_path: varchar(500)&lt;br&gt;FK uploaded_by_id: integer&lt;br&gt;status: varchar(20)&lt;br&gt;error_message: text null&lt;br&gt;created_at: timestamptz&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="280" width="380" x="960" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="document_chunks" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#E8F5E9;strokeColor=#2E7D32;fontColor=#1F2933;strokeWidth=2;fontSize=14;spacing=8;arcSize=4;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;document_chunks&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;&lt;font size=&quot;3&quot;&gt;PK id: serial&lt;br&gt;document_name: varchar&lt;br&gt;content: text&lt;br&gt;embedding: vector(1024)&lt;br&gt;page_number: integer&lt;br&gt;chunk_index: integer&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="280" width="430" x="1500" y="170" as="geometry" />
+        </mxCell>
+        <mxCell id="announcements" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#FFF3E0;strokeColor=#EF8C00;fontColor=#1F2933;strokeWidth=2;fontSize=14;spacing=8;arcSize=4;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;announcements&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;&lt;font size=&quot;3&quot;&gt;PK id: serial&lt;br&gt;title: varchar(150)&lt;br&gt;content: text&lt;br&gt;category: varchar(50)&lt;br&gt;otros_subtype: varchar(100) null&lt;br&gt;is_active: boolean&lt;br&gt;image_url: varchar(300) null&lt;br&gt;created_at: timestamptz&lt;br&gt;FK published_by: integer&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="310" width="380" x="960" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="notifications" parent="1" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fillColor=#E0F2F1;strokeColor=#00897B;fontColor=#1F2933;strokeWidth=2;fontSize=14;spacing=8;arcSize=4;" value="&lt;div style=&quot;line-height:1.18&quot;&gt;&lt;div style=&quot;&quot;&gt;&lt;b style=&quot;&quot;&gt;&lt;font style=&quot;font-size: 24px;&quot;&gt;notifications&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;hr size=&quot;1&quot;&gt;&lt;div align=&quot;left&quot;&gt;&lt;font size=&quot;3&quot;&gt;PK id: serial&lt;br&gt;FK user_id: integer&lt;br&gt;title: varchar(200)&lt;br&gt;message: varchar(500)&lt;br&gt;announcement_type: varchar(50)&lt;br&gt;announcement_id: integer null&lt;br&gt;is_read: boolean&lt;br&gt;created_at: timestamptz&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="310" width="430" x="1500" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="e_user_roles_user" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1565C0;strokeWidth=2;fontSize=12;startArrow=none;endArrow=block;endFill=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;" target="user_roles" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="260" y="450" />
+              <mxPoint x="475" y="450" />
+              <mxPoint x="475" y="320" />
+            </Array>
+            <mxPoint x="450" y="580" as="sourcePoint" />
+            <mxPoint x="505" y="320" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_user_roles_role" edge="1" parent="1" source="roles" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6A3FA0;strokeWidth=2;fontSize=12;startArrow=none;endArrow=block;endFill=1;" target="user_roles" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="440" y="245" />
+              <mxPoint x="440" y="300" />
+            </Array>
+            <mxPoint x="380" y="245" as="sourcePoint" />
+            <mxPoint x="505" y="300" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_user_documents" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D32;strokeWidth=2;fontSize=12;startArrow=none;endArrow=block;endFill=1;" target="documents" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="900" y="530" />
+              <mxPoint x="900" y="310" />
+            </Array>
+            <mxPoint x="450" y="530" as="sourcePoint" />
+            <mxPoint x="960" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_document_chunks" edge="1" parent="1" source="documents" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#2E7D32;strokeWidth=2;fontSize=12;startArrow=none;endArrow=block;endFill=1;dashed=1;dashPattern=6 4;" target="document_chunks" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1340" y="310" as="sourcePoint" />
+            <mxPoint x="1500" y="310" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_user_announcements" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#EF8C00;strokeWidth=2;fontSize=12;startArrow=none;endArrow=block;endFill=1;" target="announcements" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="450" y="700" as="sourcePoint" />
+            <mxPoint x="960" y="700" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_announcement_notifications" edge="1" parent="1" source="announcements" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#00897B;strokeWidth=2;fontSize=12;startArrow=none;endArrow=block;endFill=1;" target="notifications" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1340" y="735" as="sourcePoint" />
+            <mxPoint x="1500" y="735" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_user_notifications" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#00897B;strokeWidth=2;fontSize=12;startArrow=none;endArrow=block;endFill=1;" target="notifications" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1410" y="560" />
+              <mxPoint x="1410" y="720" />
+            </Array>
+            <mxPoint x="450" y="560" as="sourcePoint" />
+            <mxPoint x="1500" y="720" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_user_refresh" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C62828;strokeWidth=2;fontSize=12;startArrow=none;endArrow=block;endFill=1;" target="refresh_tokens" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="260" y="850" as="sourcePoint" />
+            <mxPoint x="260" y="970" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e_user_reset" edge="1" parent="1" source="users" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#C62828;strokeWidth=2;fontSize=12;startArrow=none;endArrow=block;endFill=1;" target="password_reset_tokens" value="&lt;font style=&quot;font-size: 24px;&quot;&gt;1:N&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="700" y="805" />
+            </Array>
+            <mxPoint x="450" y="805" as="sourcePoint" />
+            <mxPoint x="700" y="970" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

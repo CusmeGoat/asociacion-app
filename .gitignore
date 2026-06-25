@@ -23,6 +23,7 @@ backend/dist/
 mobile/node_modules/
 mobile/.metro/
 mobile/android/.gradle/
+mobile/android/app/.cxx/
 mobile/android/build/
 
 # Python semantic service

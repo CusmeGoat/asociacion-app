@@ -8,7 +8,17 @@ import { documentUpload } from "../uploads";
 export const documentsRouter = Router();
 const service = new DocumentService();
 
-documentsRouter.use(authenticate, authorize("SECRETARIO"));
+documentsRouter.get(
+  "/public/:documentId/ver",
+  asyncHandler(async (req, res) => {
+    const file = await service.getFile(Number(req.params.documentId));
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${file.filename.replace(/"/g, "")}"`);
+    res.sendFile(file.absolutePath);
+  }),
+);
+
+documentsRouter.use(authenticate);
 
 documentsRouter.get(
   "/",
@@ -19,6 +29,7 @@ documentsRouter.get(
 
 documentsRouter.post(
   "/cargar",
+  authorize("SECRETARIO"),
   documentUpload.single("file"),
   asyncHandler(async (req, res) => {
     res.json(await service.upload(req.file!, req.user!.id));
@@ -27,6 +38,7 @@ documentsRouter.post(
 
 documentsRouter.delete(
   "/:documentId",
+  authorize("SECRETARIO"),
   asyncHandler(async (req, res) => {
     res.json(await service.delete(Number(req.params.documentId)));
   }),

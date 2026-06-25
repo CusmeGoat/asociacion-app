@@ -1,8 +1,9 @@
 import React from 'react';
-import {ActivityIndicator, View} from 'react-native';
+import {View} from 'react-native';
 import {NavigationContainer} from '@react-navigation/native';
 
 import {AuthProvider, useAuth} from './auth/AuthContext';
+import {LoadingState} from './components/ui';
 import {AppNavigator} from './navigation/AppNavigator';
 import {styles} from './styles';
 
@@ -12,7 +13,10 @@ function Root() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#2e7d32" />
+        <LoadingState
+          title="Preparando la aplicacion"
+          detail="Validando la sesion guardada del usuario."
+        />
       </View>
     );
   }

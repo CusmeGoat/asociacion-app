@@ -27,6 +27,8 @@ export type DocumentItem = {
   id: number;
   filename: string;
   file_path: string;
+  preview_url?: string;
+  download_url?: string;
   uploaded_by_id: number;
   uploader_name: string;
   status: string;
