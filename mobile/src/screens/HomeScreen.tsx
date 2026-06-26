@@ -1,6 +1,7 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useState} from 'react';
 import {FlatList, Image, RefreshControl, StyleSheet, Text, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {useFocusEffect} from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {apiClient} from '../api/ApiClient';
@@ -13,6 +14,7 @@ import {
   AppButton,
   BottomNav,
   EmptyState,
+  Notice,
   SkeletonBlock,
 } from '../components/ui';
 import {API_BASE_URL} from '../config/api';
@@ -22,31 +24,55 @@ import {colors} from '../styles';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
+function categoryLabel(item: Announcement) {
+  if (item.category === 'GENERAL') return 'General';
+  if (item.category === 'Otros' && item.otros_subtype) return item.otros_subtype;
+  return item.category;
+}
+
 export function HomeScreen({navigation}: Props) {
   const {user, isSecretary, logout} = useAuth();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [unread, setUnread] = useState(0);
+  const [error, setError] = useState('');
 
   const load = useCallback(async () => {
     setRefreshing(true);
+    setError('');
     try {
-      const [items, count] = await Promise.all([
+      const [itemsResult, countResult] = await Promise.allSettled([
         apiClient.request<Announcement[]>('/announcements/'),
         apiClient.request<{count: number}>('/notificaciones/no-leidas/count'),
       ]);
-      setAnnouncements(items);
-      setUnread(count.count);
+
+      if (itemsResult.status === 'fulfilled') {
+        setAnnouncements(itemsResult.value);
+      } else {
+        setAnnouncements([]);
+        setError(errorText(itemsResult.reason, 'No se pudieron cargar los anuncios.'));
+      }
+
+      if (countResult.status === 'fulfilled') {
+        setUnread(countResult.value.count);
+      } else {
+        setUnread(0);
+        if (itemsResult.status === 'fulfilled') {
+          setError(errorText(countResult.reason, 'No se pudo cargar el contador de notificaciones.'));
+        }
+      }
     } finally {
       setRefreshing(false);
       setLoaded(true);
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const actions = [
     {
@@ -126,6 +152,8 @@ export function HomeScreen({navigation}: Props) {
         </AnimatedPanel>
       ) : null}
 
+      {error ? <Notice message={error} type="error" /> : null}
+
       <AnimatedPanel delay={320} style={homeStyles.sectionHeader}>
         <View>
           <Text style={homeStyles.sectionTitle}>Anuncios</Text>
@@ -169,7 +197,7 @@ export function HomeScreen({navigation}: Props) {
               <View style={homeStyles.cardTop}>
                 <View style={homeStyles.categoryPill}>
                   <Icon name="eco" size={14} color={colors.green} />
-                  <Text style={homeStyles.categoryText}>{item.category}</Text>
+                  <Text style={homeStyles.categoryText}>{categoryLabel(item)}</Text>
                 </View>
                 <Text style={homeStyles.announcementMeta}>{item.publisher_name}</Text>
               </View>
@@ -190,6 +218,10 @@ export function HomeScreen({navigation}: Props) {
       <BottomNav active="home" />
     </View>
   );
+}
+
+function errorText(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
 }
 
 function AnnouncementSkeleton() {

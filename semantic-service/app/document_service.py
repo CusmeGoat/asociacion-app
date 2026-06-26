@@ -3,6 +3,7 @@ import fitz
 from app.database import get_connection
 from app.embeddings import embed_text
 from app.text_splitter import split_text
+import os
 
 
 def vector_literal(vector: list[float]) -> str:
@@ -10,6 +11,13 @@ def vector_literal(vector: list[float]) -> str:
 
 
 def index_pdf(file_path: str, filename: str) -> int:
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"El archivo no existe en el servidor: {file_path}")
+    if os.path.getsize(file_path) == 0:
+        raise ValueError(
+            f"El archivo '{filename}' esta vacio (0 bytes). "
+            "Verifica que el PDF se haya subido correctamente desde el dispositivo."
+        )
     document = fitz.open(file_path)
     saved = 0
 

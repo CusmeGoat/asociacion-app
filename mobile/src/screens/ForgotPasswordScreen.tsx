@@ -21,18 +21,24 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ForgotPassword'>;
 export function ForgotPasswordScreen({navigation}: Props) {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [resetCode, setResetCode] = useState('');
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
     setLoading(true);
     setMessage('');
+    setResetCode('');
     try {
-      const response = await apiClient.request<{message: string}>('/auth/forgot-password', {
-        method: 'POST',
-        auth: false,
-        body: JSON.stringify({email}),
-      });
+      const response = await apiClient.request<{message: string; reset_token?: string | null}>(
+        '/auth/forgot-password',
+        {
+          method: 'POST',
+          auth: false,
+          body: JSON.stringify({email}),
+        },
+      );
       setMessage(response.message);
+      setResetCode(response.reset_token ?? '');
     } catch (err) {
       setMessage(err instanceof Error ? err.message : 'No se pudo enviar la solicitud');
     } finally {
@@ -46,7 +52,7 @@ export function ForgotPasswordScreen({navigation}: Props) {
     <ScrollView style={ui.screen} contentContainerStyle={ui.content}>
       <AppHeader
         title="Recuperar contrasena"
-        subtitle="Solicita un token de restablecimiento en tu correo registrado."
+        subtitle="Solicita un codigo de restablecimiento en tu correo registrado."
         onBack={() => navigation.navigate('Login')}
         right={
           <View style={forgotStyles.headerIcon}>
@@ -56,6 +62,12 @@ export function ForgotPasswordScreen({navigation}: Props) {
       />
 
       {message ? <Notice message={message} type={isError ? 'error' : 'success'} /> : null}
+      {resetCode ? (
+        <AnimatedPanel delay={80} style={forgotStyles.codeBox}>
+          <Text style={forgotStyles.codeLabel}>Codigo para pruebas</Text>
+          <Text style={forgotStyles.codeText}>{resetCode}</Text>
+        </AnimatedPanel>
+      ) : null}
 
       <AnimatedPanel delay={120} style={forgotStyles.card}>
         <AppInput
@@ -74,7 +86,7 @@ export function ForgotPasswordScreen({navigation}: Props) {
           loading={loading}
         />
         <AppButton
-          label="Ya tengo un token"
+          label="Ya tengo un codigo"
           icon="vpn-key"
           onPress={() => navigation.navigate('ResetPassword')}
           variant="secondary"
@@ -111,6 +123,28 @@ const forgotStyles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: {width: 0, height: 6},
     elevation: 2,
+  },
+  codeBox: {
+    backgroundColor: colors.riceSoft,
+    borderColor: '#ecdca8',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  codeLabel: {
+    color: colors.muted,
+    fontWeight: '900',
+    fontSize: 12,
+    textTransform: 'uppercase',
+  },
+  codeText: {
+    color: colors.ink,
+    fontWeight: '900',
+    fontSize: 28,
+    letterSpacing: 4,
+    marginTop: 6,
   },
   backLink: {
     minHeight: 44,

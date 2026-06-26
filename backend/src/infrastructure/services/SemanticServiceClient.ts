@@ -7,13 +7,22 @@ export type SemanticSource = {
   document_name: string;
 };
 
+export type SemanticHealth = {
+  status: string;
+  service: string;
+};
+
 export class SemanticServiceClient {
+  async health(): Promise<SemanticHealth> {
+    return this.request<SemanticHealth>("/health", { method: "GET" }, 8000);
+  }
+
   async indexDocument(input: {
     documentId: number;
     filename: string;
     filePath: string;
   }): Promise<void> {
-    await this.post("/index", input);
+    await this.post("/index", input, 60000);
   }
 
   async search(query: string, limit = 6): Promise<SemanticSource[]> {
@@ -28,39 +37,91 @@ export class SemanticServiceClient {
     await this.post("/chunks/delete", { filename });
   }
 
-  private async post<T = unknown>(path: string, body: unknown): Promise<T> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
-
-    let response: Response;
-    try {
-      response = await fetch(`${env.semanticServiceUrl}${path}`, {
+  private async post<T = unknown>(
+    path: string,
+    body: unknown,
+    timeoutMs = 30000,
+  ): Promise<T> {
+    return this.request<T>(
+      path,
+      {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
+      },
+      timeoutMs,
+    );
+  }
+
+  private async request<T = unknown>(
+    path: string,
+    options: RequestInit,
+    timeoutMs: number,
+  ): Promise<T> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const url = `${env.semanticServiceUrl}${path}`;
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
         signal: controller.signal,
       });
     } catch (error) {
-      const unavailable =
-        error instanceof Error && (error.name === "AbortError" || error.message.includes("fetch failed"));
-      throw new AppError(
-        503,
-        unavailable
-          ? "Servicio semantico no disponible. Verifica que semantic-service este levantado en el puerto 8010."
-          : "No se pudo conectar con el servicio semantico documental.",
-      );
+      throw new AppError(503, this.connectionErrorMessage(error));
     } finally {
       clearTimeout(timeout);
     }
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new AppError(
-        502,
-        `Error en microservicio semantico (${response.status}): ${text}`,
-      );
+      const detail = this.extractErrorText(await response.text());
+      const message =
+        response.status >= 500
+          ? `El microservicio semantico respondio con error (${response.status}). Revisa la consola de semantic-service. Detalle: ${detail}`
+          : `Solicitud rechazada por el microservicio semantico (${response.status}). Detalle: ${detail}`;
+      throw new AppError(response.status >= 500 ? 502 : response.status, message);
     }
 
     return (await response.json()) as T;
+  }
+
+  private connectionErrorMessage(error: unknown) {
+    if (error instanceof Error && error.name === "AbortError") {
+      return "El servicio semantico tardo demasiado en responder. Espera a que termine de cargar el modelo de embeddings y vuelve a consultar.";
+    }
+
+    const cause = (error as { cause?: { code?: string; message?: string } })?.cause;
+    const message = error instanceof Error ? error.message : "";
+    if (
+      message.includes("fetch failed") ||
+      cause?.code === "ECONNREFUSED" ||
+      cause?.code === "UND_ERR_CONNECT_TIMEOUT"
+    ) {
+      return `Servicio semantico no disponible. Verifica que semantic-service este levantado en ${env.semanticServiceUrl}.`;
+    }
+
+    return `No se pudo conectar con el servicio semantico documental. Detalle: ${
+      message || "error desconocido"
+    }`;
+  }
+
+  private extractErrorText(text: string) {
+    if (!text) return "sin detalle";
+
+    try {
+      const parsed = JSON.parse(text) as { detail?: unknown; message?: unknown };
+      const detail = parsed.detail ?? parsed.message;
+      if (typeof detail === "string") {
+        return detail.slice(0, 500);
+      }
+      if (detail) {
+        return JSON.stringify(detail).slice(0, 500);
+      }
+    } catch {
+      // Keep raw body when the semantic service returns plain text or HTML.
+    }
+
+    return text.trim().slice(0, 500) || "sin detalle";
   }
 }

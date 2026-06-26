@@ -39,7 +39,7 @@ export function ResetPasswordScreen({navigation}: Props) {
     <ScrollView style={ui.screen} contentContainerStyle={ui.content}>
       <AppHeader
         title="Restablecer contrasena"
-        subtitle="Ingresa el token recibido por correo y define una nueva clave."
+        subtitle="Ingresa el codigo recibido por correo y define una nueva clave."
         onBack={() => navigation.navigate('ForgotPassword')}
         right={
           <View style={resetStyles.headerIcon}>
@@ -52,7 +52,7 @@ export function ResetPasswordScreen({navigation}: Props) {
 
       <AnimatedPanel delay={120} style={resetStyles.card}>
         <AppInput
-          label="Token"
+          label="Codigo"
           icon="vpn-key"
           placeholder="Codigo de recuperacion"
           value={token}

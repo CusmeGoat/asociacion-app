@@ -20,5 +20,6 @@ export const env = {
     user: process.env.SMTP_USER ?? "",
     password: process.env.SMTP_PASSWORD ?? "",
     fromName: process.env.SMTP_FROM_NAME ?? "Asociacion Agricola 10 de Mayo",
+    fromEmail: process.env.SMTP_FROM_EMAIL ?? process.env.SMTP_USER ?? "",
   },
 };

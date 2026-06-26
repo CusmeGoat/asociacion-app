@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { randomInt } from "crypto";
 
 import { env } from "../../config/env";
 import { AppDataSource } from "../../config/data-source";
@@ -72,12 +73,12 @@ export class AuthService {
 
   async forgotPassword(email: string) {
     const user = await this.users.findOne({ where: { email } });
-    const message = "Si el correo existe, recibiras un enlace de restablecimiento.";
+    const message = "Si el correo existe, recibiras un codigo de restablecimiento.";
     if (!user) {
       return { message, reset_token: null };
     }
 
-    const token = createRefreshToken();
+    const token = await this.createPasswordResetCode();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await this.passwordResetTokens.save(
       this.passwordResetTokens.create({
@@ -88,11 +89,25 @@ export class AuthService {
       }),
     );
 
-    await this.email.sendResetPasswordEmail({
-      toEmail: user.email,
-      nombre: `${user.nombres} ${user.apellidos}`,
-      resetToken: token,
-    });
+    let emailResult: { sent: boolean; reason?: string };
+    try {
+      emailResult = await this.email.sendResetPasswordEmail({
+        toEmail: user.email,
+        nombre: `${user.nombres} ${user.apellidos}`,
+        resetToken: token,
+      });
+    } catch (error) {
+      console.error("[email] No se pudo enviar el codigo de recuperacion", error);
+      emailResult = { sent: false, reason: "Error SMTP" };
+    }
+
+    if (!emailResult.sent && env.nodeEnv !== "production") {
+      return {
+        message:
+          "SMTP no esta configurado. Para pruebas, usa el codigo mostrado en esta pantalla y en la consola del backend.",
+        reset_token: token,
+      };
+    }
 
     return { message, reset_token: null };
   }
@@ -144,5 +159,17 @@ export class AuthService {
       token_type: "bearer",
       user: userResponse(user),
     };
+  }
+
+  private async createPasswordResetCode() {
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const token = randomInt(100000, 1000000).toString();
+      const existing = await this.passwordResetTokens.findOne({ where: { token } });
+      if (!existing) {
+        return token;
+      }
+    }
+
+    return createRefreshToken();
   }
 }

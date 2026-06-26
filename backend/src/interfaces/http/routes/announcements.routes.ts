@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { AnnouncementService } from "../../../application/services/AnnouncementService";
+import { AppError } from "../../../shared/errors/AppError";
 import { asyncHandler } from "../../../shared/http/asyncHandler";
 import { authenticate, authorize } from "../middlewares/authenticate";
 import { imageUpload } from "../uploads";
@@ -28,16 +29,18 @@ announcementsRouter.get(
 announcementsRouter.post(
   "/",
   authorize("SECRETARIO"),
+  imageUpload.single("file"),
   asyncHandler(async (req, res) => {
-    res.status(201).json(await service.create(req.body, req.user!.id));
+    res.status(201).json(await service.create(req.body, req.user!.id, req.file));
   }),
 );
 
 announcementsRouter.put(
   "/:id",
   authorize("SECRETARIO"),
+  imageUpload.single("file"),
   asyncHandler(async (req, res) => {
-    res.json(await service.update(Number(req.params.id), req.body));
+    res.json(await service.update(Number(req.params.id), req.body, req.file));
   }),
 );
 
@@ -62,6 +65,9 @@ announcementsRouter.patch(
   authorize("SECRETARIO"),
   imageUpload.single("file"),
   asyncHandler(async (req, res) => {
+    if (!req.file) {
+      throw new AppError(400, "Selecciona una imagen JPG o PNG para el anuncio.");
+    }
     res.json(await service.setImage(Number(req.params.id), req.file!));
   }),
 );

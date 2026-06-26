@@ -89,7 +89,13 @@ export function AnimatedListItem({children, index, style, entrance = 'up'}: Anim
 
 type AnimatedPressableProps = Pick<
   PressableProps,
-  'accessibilityLabel' | 'accessibilityRole' | 'disabled' | 'hitSlop' | 'onLongPress' | 'onPress'
+  | 'accessibilityLabel'
+  | 'accessibilityRole'
+  | 'disabled'
+  | 'hitSlop'
+  | 'onLongPress'
+  | 'onPress'
+  | 'pressRetentionOffset'
 > & {
   children: React.ReactNode;
   scaleTo?: number;
@@ -191,6 +197,8 @@ type ButtonProps = {
   disabled?: boolean;
   loading?: boolean;
   variant?: 'primary' | 'secondary' | 'danger';
+  hitSlop?: PressableProps['hitSlop'];
+  style?: StyleProp<ViewStyle>;
 };
 
 export function AppButton({
@@ -200,6 +208,8 @@ export function AppButton({
   disabled,
   loading,
   variant = 'primary',
+  hitSlop = 8,
+  style,
 }: ButtonProps) {
   const secondary = variant === 'secondary';
   const danger = variant === 'danger';
@@ -210,8 +220,11 @@ export function AppButton({
       style={[
         ui.button,
         secondary ? ui.secondaryButton : {backgroundColor: color, borderColor: color},
+        style,
       ]}
       disabled={disabled || loading}
+      hitSlop={hitSlop}
+      pressRetentionOffset={30}
       onPress={onPress}>
       {loading ? (
         <ActivityIndicator size="small" color={secondary ? color : '#fff'} />

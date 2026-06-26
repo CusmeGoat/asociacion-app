@@ -22,6 +22,7 @@ export class AnnouncementService {
       otros_subtype?: string | null;
     },
     currentUserId: number,
+    file?: Express.Multer.File,
   ) {
     const announcement = await this.announcements.save(
       this.announcements.create({
@@ -30,6 +31,7 @@ export class AnnouncementService {
         category: input.category,
         otrosSubtype: input.otros_subtype ?? null,
         isActive: true,
+        imageUrl: file ? `/static/images/${file.filename}` : null,
         publishedBy: currentUserId,
       }),
     );
@@ -76,6 +78,7 @@ export class AnnouncementService {
       otros_subtype: string | null;
       is_active: boolean;
     }>,
+    file?: Express.Multer.File,
   ) {
     const announcement = await this.findById(id);
     announcement.title = input.title ?? announcement.title;
@@ -85,6 +88,10 @@ export class AnnouncementService {
       input.otros_subtype === undefined ? announcement.otrosSubtype : input.otros_subtype;
     announcement.isActive =
       input.is_active === undefined ? announcement.isActive : input.is_active;
+    if (file) {
+      this.deleteImageFile(announcement.imageUrl);
+      announcement.imageUrl = `/static/images/${file.filename}`;
+    }
     return announcementResponse(await this.announcements.save(announcement));
   }
 

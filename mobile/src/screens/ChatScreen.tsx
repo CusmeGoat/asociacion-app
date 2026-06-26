@@ -1,7 +1,7 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   FlatList,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   StyleSheet,
   Text,
@@ -30,6 +30,7 @@ type Message = {
 };
 
 export function ChatScreen() {
+  const listRef = useRef<FlatList<Message>>(null);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'bot',
@@ -39,6 +40,19 @@ export function ChatScreen() {
   ]);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', event => {
+      setKeyboardHeight(event.endCoordinates.height);
+      setTimeout(() => listRef.current?.scrollToEnd({animated: true}), 80);
+    });
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
 
   const send = async () => {
     const pregunta = text.trim();
@@ -74,9 +88,7 @@ export function ChatScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={ui.screen}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <View style={ui.screen}>
       <View style={chatStyles.content}>
         <AppHeader
           title="Asistente documental"
@@ -89,6 +101,7 @@ export function ChatScreen() {
         />
 
         <FlatList
+          ref={listRef}
           data={messages}
           keyExtractor={(_, index) => String(index)}
           contentContainerStyle={chatStyles.thread}
@@ -134,10 +147,16 @@ export function ChatScreen() {
               </AnimatedListItem>
             );
           }}
+          onContentSizeChange={() => listRef.current?.scrollToEnd({animated: true})}
         />
       </View>
 
-      <AnimatedPanel entrance="down" style={chatStyles.composer}>
+      <AnimatedPanel
+        entrance="down"
+        style={[
+          chatStyles.composer,
+          keyboardHeight ? {marginBottom: Platform.OS === 'android' ? keyboardHeight : 0} : null,
+        ]}>
         <TextInput
           style={chatStyles.input}
           placeholder="Pregunta sobre estatutos, actas o documentos..."
@@ -151,8 +170,8 @@ export function ChatScreen() {
           <Icon name={loading ? 'hourglass-top' : 'send'} size={22} color="#fff" />
         </AnimatedPressable>
       </AnimatedPanel>
-      <BottomNav active="chat" />
-    </KeyboardAvoidingView>
+      {keyboardHeight ? null : <BottomNav active="chat" />}
+    </View>
   );
 }
 

@@ -21,7 +21,7 @@ function Use-ShortProjectPathIfNeeded {
     return
   }
 
-  $mirrorRoot = 'C:\tmp\asociacion-app-mobile-build'
+  $mirrorRoot = if ($env:ASOCIACION_MIRROR_ROOT) { $env:ASOCIACION_MIRROR_ROOT } else { 'C:\tmp\aamobile-build' }
   $mirrorScript = Join-Path $mirrorRoot 'scripts\run-android.ps1'
   $excludeDirs = @(
     (Join-Path $mobileRoot 'android\.gradle'),
@@ -76,6 +76,7 @@ $sdkRoot = Join-Path $env:LOCALAPPDATA 'Android\Sdk'
 $androidUserHome = 'C:\Users\cusmej\.android'
 $androidAvdHome = Join-Path $androidUserHome 'avd'
 $avdName = 'Pixel_6_API_36'
+$emulatorGpu = if ($env:ASOCIACION_EMULATOR_GPU) { $env:ASOCIACION_EMULATOR_GPU } else { 'host' }
 
 $env:JAVA_HOME = $jdk17
 $env:ANDROID_HOME = $sdkRoot
@@ -135,13 +136,29 @@ if (-not $onlineDevice) {
       throw "AVD $avdName was not found. Available AVDs: $($availableAvds -join ', ')"
     }
 
-    Write-Host "Starting emulator $avdName..."
-    Start-Process -FilePath $emulator -ArgumentList @('-avd', $avdName, '-gpu', 'swiftshader_indirect')
+    Write-Host "Starting emulator $avdName with GPU mode $emulatorGpu..."
+    Start-Process -FilePath $emulator -ArgumentList @(
+      '-avd',
+      $avdName,
+      '-gpu',
+      $emulatorGpu,
+      '-no-boot-anim',
+      '-no-snapshot-save'
+    )
   }
 
   Wait-ForAndroidBoot
 } else {
   Write-Host "Android device detected: $onlineDevice"
+}
+
+try {
+  & $adb reverse tcp:8081 tcp:8081 | Out-Null
+  Write-Host 'ADB reverse configured: device tcp:8081 -> host tcp:8081'
+  & $adb reverse tcp:8000 tcp:8000 | Out-Null
+  Write-Host 'ADB reverse configured: device tcp:8000 -> host tcp:8000'
+} catch {
+  Write-Host "Could not configure ADB reverse ports: $($_.Exception.Message)"
 }
 
 $defaultReactNativeArgs = @()

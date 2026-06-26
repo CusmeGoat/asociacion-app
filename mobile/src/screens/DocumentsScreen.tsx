@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {FlatList, Linking, RefreshControl, StyleSheet, Text, View} from 'react-native';
-import {pick, types} from '@react-native-documents/picker';
+import {pick, types, errorCodes, isErrorWithCode} from '@react-native-documents/picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {apiClient} from '../api/ApiClient';
@@ -11,6 +11,7 @@ import {
   AnimatedPressable,
   AppButton,
   AppHeader,
+  AppInput,
   BottomNav,
   EmptyState,
   Notice,
@@ -20,6 +21,7 @@ import {
 } from '../components/ui';
 import {API_BASE_URL} from '../config/api';
 import {DocumentItem} from '../types';
+import {blobUtilUploadData, copyPickedFileToCache} from '../utils/upload';
 import {colors} from '../styles';
 
 export function DocumentsScreen() {
@@ -29,6 +31,7 @@ export function DocumentsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     setRefreshing(true);
@@ -49,20 +52,30 @@ export function DocumentsScreen() {
     setMessage('');
     try {
       const [file] = await pick({type: [types.pdf]});
-      const form = new FormData();
-      form.append('file', {
-        uri: file.uri,
-        name: file.name ?? 'documento.pdf',
-        type: file.type ?? 'application/pdf',
-      } as unknown as Blob);
+      const localFile = await copyPickedFileToCache(file, 'documento.pdf', 'application/pdf');
 
-      await apiClient.request('/documentos/cargar', {
+      await apiClient.uploadForm('/documentos/cargar', [
+        {
+          name: 'file',
+          filename: localFile.name,
+          type: localFile.type,
+          data: blobUtilUploadData(localFile.uri),
+        },
+      ], {
         method: 'POST',
-        body: form,
+        timeoutMs: 60000,
       });
       setMessage('Documento subido. La indexacion semantica se procesa en segundo plano.');
       await load();
     } catch (err) {
+      // Cancelacion silenciosa: el usuario cerro el selector sin elegir archivo
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
+        return;
+      }
+      // Operacion en curso: el selector ya esta abierto
+      if (isErrorWithCode(err) && err.code === errorCodes.IN_PROGRESS) {
+        return;
+      }
       const text = err instanceof Error ? err.message : 'No se pudo subir el documento';
       setMessage(text);
     } finally {
@@ -98,6 +111,10 @@ export function DocumentsScreen() {
   };
 
   const messageType = message.toLowerCase().includes('no se pudo') ? 'error' : 'info';
+  const searchTerm = normalizeSearch(search);
+  const filteredDocuments = searchTerm
+    ? documents.filter(item => normalizeSearch(item.filename).includes(searchTerm))
+    : documents;
 
   return (
     <View style={ui.screen}>
@@ -125,17 +142,44 @@ export function DocumentsScreen() {
 
         {message ? <Notice message={message} type={messageType} /> : null}
 
+        <AnimatedPanel delay={160} style={documentsStyles.searchPanel}>
+          <AppInput
+            label="Buscar documento"
+            icon="search"
+            placeholder="Ej. Vida juridica, acta, nombramiento..."
+            value={search}
+            onChangeText={setSearch}
+            autoCapitalize="none"
+            right={
+              search ? (
+                <AnimatedPressable
+                  style={documentsStyles.clearButton}
+                  onPress={() => setSearch('')}>
+                  <Icon name="close" size={18} color={colors.muted} />
+                </AnimatedPressable>
+              ) : null
+            }
+          />
+          <Text style={documentsStyles.searchMeta}>
+            {filteredDocuments.length} de {documents.length} documentos
+          </Text>
+        </AnimatedPanel>
+
         <FlatList
-          data={documents}
+          data={filteredDocuments}
           keyExtractor={item => String(item.id)}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
           contentContainerStyle={documentsStyles.listContent}
           ListEmptyComponent={
             !loaded && refreshing ? <DocumentsSkeleton /> : (
               <EmptyState
-                icon="library-books"
-                title="No hay documentos cargados"
-                detail="Cuando se suban PDFs, apareceran aqui con su estado de indexacion."
+                icon={searchTerm ? 'search-off' : 'library-books'}
+                title={searchTerm ? 'No hay coincidencias' : 'No hay documentos cargados'}
+                detail={
+                  searchTerm
+                    ? 'Intenta buscar por otra palabra del nombre del archivo.'
+                    : 'Cuando se suban PDFs, apareceran aqui con su estado de indexacion.'
+                }
               />
             )
           }
@@ -196,6 +240,14 @@ export function DocumentsScreen() {
   );
 }
 
+function normalizeSearch(value: string) {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
 function DocumentsSkeleton() {
   return (
     <AnimatedPanel style={documentsStyles.skeletonCard}>
@@ -228,6 +280,33 @@ const documentsStyles = StyleSheet.create({
   listContent: {
     paddingTop: 12,
     paddingBottom: 20,
+  },
+  searchPanel: {
+    backgroundColor: colors.surface,
+    borderColor: colors.line,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 12,
+    marginTop: 12,
+    shadowColor: colors.greenDark,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: {width: 0, height: 5},
+    elevation: 1,
+  },
+  clearButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#eef3ef',
+  },
+  searchMeta: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: '800',
+    marginTop: 4,
   },
   card: {
     backgroundColor: colors.surface,

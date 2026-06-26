@@ -1,6 +1,7 @@
 import { Router } from "express";
 
 import { DocumentService } from "../../../application/services/DocumentService";
+import { AppError } from "../../../shared/errors/AppError";
 import { asyncHandler } from "../../../shared/http/asyncHandler";
 import { authenticate, authorize } from "../middlewares/authenticate";
 import { documentUpload } from "../uploads";
@@ -32,6 +33,9 @@ documentsRouter.post(
   authorize("SECRETARIO"),
   documentUpload.single("file"),
   asyncHandler(async (req, res) => {
+    if (!req.file) {
+      throw new AppError(400, "Selecciona un archivo PDF para subir.");
+    }
     res.json(await service.upload(req.file!, req.user!.id));
   }),
 );
