@@ -79,3 +79,17 @@ announcementsRouter.delete(
     res.json(await service.deleteImage(Number(req.params.id)));
   }),
 );
+
+announcementsRouter.delete(
+  "/:id",
+  asyncHandler(async (req, res) => {
+    const roles = req.user?.roles.map((role) => role.name) ?? [];
+    res.json(
+      await service.delete(
+        Number(req.params.id),
+        req.user!.id,
+        roles.includes("SECRETARIO"),
+      ),
+    );
+  }),
+);

@@ -5,6 +5,9 @@ export type SemanticSource = {
   content: string;
   page_number: number;
   document_name: string;
+  chunk_index?: number;
+  distance?: number;
+  quality?: number;
 };
 
 export type SemanticHealth = {
@@ -22,7 +25,7 @@ export class SemanticServiceClient {
     filename: string;
     filePath: string;
   }): Promise<void> {
-    await this.post("/index", input, 60000);
+    await this.post("/index", input, 600000);
   }
 
   async search(query: string, limit = 6): Promise<SemanticSource[]> {

@@ -4,7 +4,15 @@ import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {apiClient} from '../api/ApiClient';
-import {AnimatedPanel, AppButton, AppHeader, AppInput, Notice, ui} from '../components/ui';
+import {
+  AnimatedPanel,
+  AnimatedPressable,
+  AppButton,
+  AppHeader,
+  AppInput,
+  Notice,
+  ui,
+} from '../components/ui';
 import {RootStackParamList} from '../navigation/types';
 import {colors} from '../styles';
 
@@ -13,12 +21,23 @@ type Props = NativeStackScreenProps<RootStackParamList, 'ResetPassword'>;
 export function ResetPasswordScreen({navigation}: Props) {
   const [token, setToken] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
-    setLoading(true);
     setMessage('');
+    if (password.length < 8) {
+      setMessage('La contrasena debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setMessage('Las contrasenas no coinciden. Revisa ambos campos.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const response = await apiClient.request<{message: string}>('/auth/reset-password', {
         method: 'POST',
@@ -33,7 +52,11 @@ export function ResetPasswordScreen({navigation}: Props) {
     }
   };
 
-  const isError = message.toLowerCase().includes('no se pudo');
+  const normalizedMessage = message.toLowerCase();
+  const isError =
+    normalizedMessage.includes('no se pudo') ||
+    normalizedMessage.includes('no coinciden') ||
+    normalizedMessage.includes('debe tener');
 
   return (
     <ScrollView style={ui.screen} contentContainerStyle={ui.content}>
@@ -65,13 +88,46 @@ export function ResetPasswordScreen({navigation}: Props) {
           placeholder="Nueva contrasena"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
+          right={
+            <AnimatedPressable
+              style={resetStyles.eyeButton}
+              accessibilityLabel={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+              onPress={() => setShowPassword(current => !current)}>
+              <Icon
+                name={showPassword ? 'visibility-off' : 'visibility'}
+                size={21}
+                color={colors.muted}
+              />
+            </AnimatedPressable>
+          }
+        />
+        <AppInput
+          label="Confirmar contrasena"
+          icon="lock-outline"
+          placeholder="Repite la nueva contrasena"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry={!showPassword}
+          right={
+            <AnimatedPressable
+              style={resetStyles.eyeButton}
+              accessibilityLabel={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+              onPress={() => setShowPassword(current => !current)}>
+              <Icon
+                name={showPassword ? 'visibility-off' : 'visibility'}
+                size={21}
+                color={colors.muted}
+              />
+            </AnimatedPressable>
+          }
         />
         <AppButton
           label={loading ? 'Restableciendo...' : 'Restablecer'}
           icon="check-circle"
           onPress={submit}
           loading={loading}
+          disabled={!token || !password || !confirmPassword}
         />
       </AnimatedPanel>
     </ScrollView>
@@ -98,5 +154,11 @@ const resetStyles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: {width: 0, height: 6},
     elevation: 2,
+  },
+  eyeButton: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

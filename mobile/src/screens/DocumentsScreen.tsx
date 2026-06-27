@@ -1,18 +1,18 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {FlatList, Linking, RefreshControl, StyleSheet, Text, View} from 'react-native';
-import {pick, types, errorCodes, isErrorWithCode} from '@react-native-documents/picker';
+import {errorCodes, isErrorWithCode, pick, types} from '@react-native-documents/picker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {apiClient} from '../api/ApiClient';
 import {useAuth} from '../auth/AuthContext';
 import {
-  AnimatedListItem,
   AnimatedPanel,
   AnimatedPressable,
   AppButton,
   AppHeader,
   AppInput,
   BottomNav,
+  ConfirmDialog,
   EmptyState,
   Notice,
   SkeletonBlock,
@@ -25,13 +25,15 @@ import {blobUtilUploadData, copyPickedFileToCache} from '../utils/upload';
 import {colors} from '../styles';
 
 export function DocumentsScreen() {
-  const {isSecretary} = useAuth();
+  const {isSecretary, user} = useAuth();
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [message, setMessage] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [search, setSearch] = useState('');
+  const [documentToDelete, setDocumentToDelete] = useState<DocumentItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setRefreshing(true);
@@ -54,38 +56,80 @@ export function DocumentsScreen() {
       const [file] = await pick({type: [types.pdf]});
       const localFile = await copyPickedFileToCache(file, 'documento.pdf', 'application/pdf');
 
-      await apiClient.uploadForm('/documentos/cargar', [
+      const result = await apiClient.uploadForm<{
+        document_id: number;
+        document: string;
+        message?: string;
+      }>(
+        '/documentos/cargar',
+        [
+          {
+            name: 'file',
+            filename: localFile.name,
+            type: localFile.type,
+            data: blobUtilUploadData(localFile.uri),
+          },
+        ],
         {
-          name: 'file',
-          filename: localFile.name,
-          type: localFile.type,
-          data: blobUtilUploadData(localFile.uri),
+          method: 'POST',
+          timeoutMs: 60000,
         },
-      ], {
-        method: 'POST',
-        timeoutMs: 60000,
-      });
+      );
+      const filename = result.document || localFile.name || 'documento.pdf';
+      const previewPath = `/documentos/public/${result.document_id}/ver`;
+      const optimisticDocument: DocumentItem = {
+        id: result.document_id,
+        filename,
+        file_path: `/static/documents/${encodeURIComponent(filename)}`,
+        preview_url: previewPath,
+        download_url: previewPath,
+        uploaded_by_id: user?.id ?? 0,
+        uploader_name: user ? `${user.nombres} ${user.apellidos}` : 'Usuario actual',
+        status: 'pendiente',
+        error_message: null,
+        created_at: new Date().toISOString(),
+      };
+
+      setSearch('');
+      setDocuments(current => [
+        optimisticDocument,
+        ...current.filter(item => item.id !== result.document_id),
+      ]);
+      setLoaded(true);
       setMessage('Documento subido. La indexacion semantica se procesa en segundo plano.');
-      await load();
     } catch (err) {
-      // Cancelacion silenciosa: el usuario cerro el selector sin elegir archivo
       if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         return;
       }
-      // Operacion en curso: el selector ya esta abierto
       if (isErrorWithCode(err) && err.code === errorCodes.IN_PROGRESS) {
         return;
       }
-      const text = err instanceof Error ? err.message : 'No se pudo subir el documento';
-      setMessage(text);
+      const text = err instanceof Error ? err.message : String(err);
+      console.error('[Upload Error]', err);
+      setMessage(`No se pudo subir: ${text}`);
     } finally {
       setUploading(false);
     }
   };
 
-  const remove = async (id: number) => {
-    await apiClient.request(`/documentos/${id}`, {method: 'DELETE'});
-    await load();
+  const confirmRemove = async () => {
+    if (!documentToDelete) return;
+    const previous = documents;
+    const id = documentToDelete.id;
+    setDeleting(true);
+    setMessage('');
+    setDocuments(current => current.filter(item => item.id !== id));
+    try {
+      await apiClient.request(`/documentos/${id}`, {method: 'DELETE'});
+      setDocumentToDelete(null);
+      setMessage('Documento eliminado correctamente.');
+    } catch (err) {
+      setDocuments(previous);
+      const text = err instanceof Error ? err.message : String(err);
+      setMessage(`No se pudo eliminar: ${text}`);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const documentUrl = (item: DocumentItem, mode: 'preview' | 'download') => {
@@ -130,19 +174,19 @@ export function DocumentsScreen() {
         />
 
         {isSecretary ? (
-          <AnimatedPanel delay={120}>
+          <View>
             <AppButton
               label={uploading ? 'Subiendo documento...' : 'Subir PDF'}
               icon="upload-file"
               onPress={upload}
               loading={uploading}
             />
-          </AnimatedPanel>
+          </View>
         ) : null}
 
         {message ? <Notice message={message} type={messageType} /> : null}
 
-        <AnimatedPanel delay={160} style={documentsStyles.searchPanel}>
+        <View style={documentsStyles.searchPanel}>
           <AppInput
             label="Buscar documento"
             icon="search"
@@ -163,7 +207,7 @@ export function DocumentsScreen() {
           <Text style={documentsStyles.searchMeta}>
             {filteredDocuments.length} de {documents.length} documentos
           </Text>
-        </AnimatedPanel>
+        </View>
 
         <FlatList
           data={filteredDocuments}
@@ -171,7 +215,9 @@ export function DocumentsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
           contentContainerStyle={documentsStyles.listContent}
           ListEmptyComponent={
-            !loaded && refreshing ? <DocumentsSkeleton /> : (
+            !loaded && refreshing ? (
+              <DocumentsSkeleton />
+            ) : (
               <EmptyState
                 icon={searchTerm ? 'search-off' : 'library-books'}
                 title={searchTerm ? 'No hay coincidencias' : 'No hay documentos cargados'}
@@ -183,8 +229,8 @@ export function DocumentsScreen() {
               />
             )
           }
-          renderItem={({item, index}) => (
-            <AnimatedListItem index={index}>
+          renderItem={({item}) => (
+            <View>
               <View style={documentsStyles.card}>
                 <View style={documentsStyles.docIcon}>
                   <Icon name="picture-as-pdf" size={24} color={colors.green} />
@@ -223,7 +269,7 @@ export function DocumentsScreen() {
                     {isSecretary ? (
                       <AnimatedPressable
                         style={documentsStyles.deleteButton}
-                        onPress={() => remove(item.id)}>
+                        onPress={() => setDocumentToDelete(item)}>
                         <Icon name="delete-outline" size={18} color={colors.danger} />
                         <Text style={documentsStyles.deleteText}>Eliminar</Text>
                       </AnimatedPressable>
@@ -231,10 +277,23 @@ export function DocumentsScreen() {
                   </View>
                 </View>
               </View>
-            </AnimatedListItem>
+            </View>
           )}
         />
       </View>
+      <ConfirmDialog
+        visible={Boolean(documentToDelete)}
+        title="Eliminar documento"
+        message={`Se eliminara "${documentToDelete?.filename ?? ''}" de la biblioteca. Esta accion no se puede deshacer.`}
+        confirmLabel="Eliminar"
+        icon="picture-as-pdf"
+        destructive
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) setDocumentToDelete(null);
+        }}
+        onConfirm={confirmRemove}
+      />
       <BottomNav active="documents" />
     </View>
   );

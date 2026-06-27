@@ -18,6 +18,8 @@ export type Announcement = {
   otros_subtype?: string | null;
   is_active: boolean;
   image_url?: string | null;
+  deleted_at?: string | null;
+  deleted_by?: number | null;
   created_at: string;
   published_by: number;
   publisher_name: string;
@@ -49,4 +51,16 @@ export type ChatSource = {
   content: string;
   page_number: number;
   document_name: string;
+  chunk_index?: number;
+  distance?: number;
+  quality?: number;
+};
+
+export type ChatbotResponse = {
+  respuesta: string;
+  resumen?: string;
+  puntos?: string[];
+  aclaracion?: string | null;
+  fragmentos?: ChatSource[];
+  fuentes: ChatSource[];
 };

@@ -1,6 +1,7 @@
 import React, {useEffect} from 'react';
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   PressableProps,
   StyleProp,
@@ -59,6 +60,7 @@ type AnimatedPanelProps = {
   children: React.ReactNode;
   delay?: number;
   entrance?: Entrance;
+  layout?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -66,10 +68,14 @@ export function AnimatedPanel({
   children,
   delay = 0,
   entrance = 'up',
+  layout = true,
   style,
 }: AnimatedPanelProps) {
   return (
-    <Animated.View entering={entranceFor(entrance, delay)} layout={layoutTransition} style={style}>
+    <Animated.View
+      entering={entranceFor(entrance, delay)}
+      layout={layout ? layoutTransition : undefined}
+      style={style}>
       {children}
     </Animated.View>
   );
@@ -80,10 +86,24 @@ type AnimatedListItemProps = AnimatedPanelProps & {
 };
 
 export function AnimatedListItem({children, index, style, entrance = 'up'}: AnimatedListItemProps) {
+  const delay = Math.min(index * 70, 420);
+  const animation =
+    entrance === 'fade'
+      ? FadeIn
+      : entrance === 'down'
+        ? FadeInDown
+        : entrance === 'left'
+          ? FadeInLeft
+          : entrance === 'right'
+            ? FadeInRight
+            : entrance === 'zoom'
+              ? ZoomIn
+              : FadeInUp;
+
   return (
-    <AnimatedPanel delay={Math.min(index * 70, 420)} entrance={entrance} style={style}>
+    <Animated.View entering={animation.delay(delay).duration(330)} style={style}>
       {children}
-    </AnimatedPanel>
+    </Animated.View>
   );
 }
 
@@ -340,6 +360,77 @@ export function Notice({message, type = 'info'}: NoticeProps) {
       <Icon name={icon} size={20} color={color} />
       <Text style={ui.noticeText}>{message}</Text>
     </AnimatedPanel>
+  );
+}
+
+type ConfirmDialogProps = {
+  visible: boolean;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel?: string;
+  icon?: string;
+  destructive?: boolean;
+  loading?: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+};
+
+export function ConfirmDialog({
+  visible,
+  title,
+  message,
+  confirmLabel,
+  cancelLabel = 'Cancelar',
+  icon = 'delete-outline',
+  destructive,
+  loading,
+  onCancel,
+  onConfirm,
+}: ConfirmDialogProps) {
+  const color = destructive ? colors.danger : colors.green;
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={ui.modalOverlay}>
+        <AnimatedPanel entrance="zoom" style={ui.confirmCard}>
+          <View style={[ui.confirmIconShell, {backgroundColor: `${color}16`}]}>
+            <Icon name={icon} size={34} color={color} />
+          </View>
+          <Text style={ui.confirmTitle}>{title}</Text>
+          <Text style={ui.confirmMessage}>{message}</Text>
+          <View style={ui.confirmActions}>
+            <Pressable
+              style={[ui.confirmButton, ui.confirmCancelButton, loading ? ui.disabledButton : null]}
+              onPress={onCancel}
+              disabled={loading}
+              hitSlop={10}>
+              <Icon name="close" size={22} color={colors.green} />
+              <Text style={[ui.confirmButtonText, ui.confirmCancelText]}>{cancelLabel}</Text>
+            </Pressable>
+            <Pressable
+              style={[
+                ui.confirmButton,
+                ui.confirmConfirmButton,
+                {backgroundColor: color, borderColor: color},
+                loading ? ui.disabledButton : null,
+              ]}
+              onPress={onConfirm}
+              disabled={loading}
+              hitSlop={10}>
+              {loading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Icon name={destructive ? 'delete-outline' : 'check-circle'} size={22} color="#fff" />
+              )}
+              <Text style={ui.confirmButtonText}>
+                {loading ? 'Procesando...' : confirmLabel}
+              </Text>
+            </Pressable>
+          </View>
+        </AnimatedPanel>
+      </View>
+    </Modal>
   );
 }
 
@@ -692,6 +783,88 @@ export const ui = StyleSheet.create({
     flex: 1,
     color: colors.ink,
     lineHeight: 19,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 20, 0.48)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 22,
+  },
+  confirmCard: {
+    width: '100%',
+    maxWidth: 380,
+    backgroundColor: colors.surface,
+    borderColor: colors.line,
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    shadowOffset: {width: 0, height: 10},
+    elevation: 10,
+  },
+  confirmIconShell: {
+    width: 70,
+    height: 70,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  confirmTitle: {
+    color: colors.ink,
+    fontSize: 21,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  confirmMessage: {
+    color: colors.muted,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  confirmActions: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 12,
+  },
+  confirmButton: {
+    flex: 1,
+    minHeight: 54,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  confirmCancelButton: {
+    backgroundColor: colors.surface,
+    borderColor: colors.green,
+  },
+  confirmConfirmButton: {
+    shadowColor: colors.danger,
+    shadowOpacity: 0.18,
+    shadowRadius: 9,
+    shadowOffset: {width: 0, height: 5},
+    elevation: 3,
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '900',
+    textAlign: 'center',
+  },
+  confirmCancelText: {
+    color: colors.green,
   },
   statusBadge: {
     alignSelf: 'flex-start',

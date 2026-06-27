@@ -4,18 +4,37 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {apiClient} from '../api/ApiClient';
 import {useAuth} from '../auth/AuthContext';
-import {AnimatedPanel, AppButton, AppHeader, AppInput, Notice, ui} from '../components/ui';
+import {
+  AnimatedPanel,
+  AnimatedPressable,
+  AppButton,
+  AppHeader,
+  AppInput,
+  Notice,
+  ui,
+} from '../components/ui';
 import {colors} from '../styles';
 
 export function ForceChangePasswordScreen() {
   const {reloadMe} = useAuth();
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const submit = async () => {
-    setLoading(true);
     setError('');
+    if (password.length < 8) {
+      setError('La contrasena debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Las contrasenas no coinciden. Revisa ambos campos.');
+      return;
+    }
+
+    setLoading(true);
     try {
       await apiClient.request('/auth/update-password', {
         method: 'POST',
@@ -50,13 +69,46 @@ export function ForceChangePasswordScreen() {
           placeholder="Ingresa una nueva clave"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry
+          secureTextEntry={!showPassword}
+          right={
+            <AnimatedPressable
+              style={forceStyles.eyeButton}
+              accessibilityLabel={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+              onPress={() => setShowPassword(current => !current)}>
+              <Icon
+                name={showPassword ? 'visibility-off' : 'visibility'}
+                size={21}
+                color={colors.muted}
+              />
+            </AnimatedPressable>
+          }
+        />
+        <AppInput
+          label="Confirmar contrasena"
+          icon="lock-outline"
+          placeholder="Vuelve a escribir la clave"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry={!showPassword}
+          right={
+            <AnimatedPressable
+              style={forceStyles.eyeButton}
+              accessibilityLabel={showPassword ? 'Ocultar contrasena' : 'Mostrar contrasena'}
+              onPress={() => setShowPassword(current => !current)}>
+              <Icon
+                name={showPassword ? 'visibility-off' : 'visibility'}
+                size={21}
+                color={colors.muted}
+              />
+            </AnimatedPressable>
+          }
         />
         <AppButton
           label={loading ? 'Guardando...' : 'Guardar contrasena'}
           icon="save"
           onPress={submit}
           loading={loading}
+          disabled={!password || !confirmPassword}
         />
       </AnimatedPanel>
     </ScrollView>
@@ -83,5 +135,11 @@ const forceStyles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: {width: 0, height: 6},
     elevation: 2,
+  },
+  eyeButton: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

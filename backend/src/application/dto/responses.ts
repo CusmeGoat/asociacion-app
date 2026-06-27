@@ -26,6 +26,8 @@ export function announcementResponse(announcement: AnnouncementEntity) {
     otros_subtype: announcement.otrosSubtype,
     is_active: announcement.isActive,
     image_url: announcement.imageUrl,
+    deleted_at: announcement.deletedAt,
+    deleted_by: announcement.deletedBy,
     created_at: announcement.createdAt,
     published_by: announcement.publishedBy,
     publisher_name: announcement.publisher

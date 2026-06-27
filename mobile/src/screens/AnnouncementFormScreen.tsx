@@ -1,16 +1,27 @@
 import React, {useState} from 'react';
-import {Image, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
+import {
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {pick, types} from '@react-native-documents/picker';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {apiClient} from '../api/ApiClient';
+import {useAuth} from '../auth/AuthContext';
 import {
   AnimatedPanel,
   AnimatedPressable,
   AppButton,
   AppHeader,
   AppInput,
+  ConfirmDialog,
   Notice,
   ui,
 } from '../components/ui';
@@ -79,6 +90,7 @@ function assetUrl(path: string) {
 }
 
 export function AnnouncementFormScreen({navigation, route}: Props) {
+  const {user, isSecretary} = useAuth();
   const current = route.params?.announcement;
   const initialCategory = resolveInitialCategory(current?.category, current?.otros_subtype);
   const [title, setTitle] = useState(current?.title ?? '');
@@ -90,9 +102,13 @@ export function AnnouncementFormScreen({navigation, route}: Props) {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState<'success' | 'error' | 'info'>('success');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
 
   const currentImageUri = current?.image_url && !removeImage ? assetUrl(current.image_url) : null;
   const previewUri = selectedImage?.uri ?? currentImageUri;
+  const canDelete = Boolean(current && (isSecretary || user?.id === current.published_by));
 
   const pickImage = async () => {
     setMessage('');
@@ -236,6 +252,30 @@ export function AnnouncementFormScreen({navigation, route}: Props) {
     navigation.goBack();
   };
 
+  const deleteAnnouncement = () => {
+    if (!current || deleting) return;
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteAnnouncement = async () => {
+    if (!current || deleting) return;
+    setDeleting(true);
+    setMessageType('info');
+    setMessage('Eliminando anuncio...');
+    try {
+      await apiClient.request(`/announcements/${current.id}`, {method: 'DELETE'});
+      setShowDeleteConfirm(false);
+      setMessageType('success');
+      setMessage('Anuncio eliminado correctamente');
+      setTimeout(() => navigation.navigate('Home'), 700);
+    } catch (err) {
+      setMessageType('error');
+      setMessage(err instanceof Error ? err.message : 'No se pudo eliminar el anuncio.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const footerIcon =
     messageType === 'success'
       ? 'check-circle'
@@ -283,34 +323,63 @@ export function AnnouncementFormScreen({navigation, route}: Props) {
           value={title}
           onChangeText={setTitle}
         />
-        <Text style={announcementStyles.label}>Categoria</Text>
-        <View style={announcementStyles.categoryGrid}>
-          {CATEGORIES.map(item => {
-            const selected = item === category;
-            return (
-              <AnimatedPressable
-                key={item}
-                style={[
-                  announcementStyles.categoryOption,
-                  selected ? announcementStyles.categoryOptionActive : null,
-                ]}
-                onPress={() => setCategory(item)}>
-                <Icon
-                  name={item === 'Urgente' ? 'priority-high' : 'eco'}
-                  size={16}
-                  color={selected ? '#fff' : colors.green}
-                />
-                <Text
-                  style={[
-                    announcementStyles.categoryOptionText,
-                    selected ? announcementStyles.categoryOptionTextActive : null,
-                  ]}>
-                  {item}
-                </Text>
-              </AnimatedPressable>
-            );
-          })}
-        </View>
+        <Text style={announcementStyles.label}>Categoría</Text>
+        <TouchableOpacity
+          style={announcementStyles.dropdownTrigger}
+          onPress={() => setShowCategoryDropdown(true)}
+          activeOpacity={0.7}>
+          <Icon name={category === 'Urgente' ? 'priority-high' : 'eco'} size={18} color={colors.green} />
+          <Text style={announcementStyles.dropdownTriggerText}>{category}</Text>
+          <Icon name="expand-more" size={22} color={colors.muted} />
+        </TouchableOpacity>
+
+        <Modal
+          visible={showCategoryDropdown}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowCategoryDropdown(false)}>
+          <TouchableOpacity
+            style={announcementStyles.dropdownOverlay}
+            activeOpacity={1}
+            onPress={() => setShowCategoryDropdown(false)}>
+            <View style={announcementStyles.dropdownMenu}>
+              <Text style={announcementStyles.dropdownTitle}>Selecciona una categoría</Text>
+              {CATEGORIES.map(item => {
+                const selected = item === category;
+                return (
+                  <TouchableOpacity
+                    key={item}
+                    style={[
+                      announcementStyles.dropdownItem,
+                      selected ? announcementStyles.dropdownItemActive : null,
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={() => {
+                      setCategory(item);
+                      setShowCategoryDropdown(false);
+                    }}>
+                    <Icon
+                      name={item === 'Urgente' ? 'priority-high' : 'eco'}
+                      size={17}
+                      color={selected ? colors.green : colors.muted}
+                    />
+                    <Text
+                      style={[
+                        announcementStyles.dropdownItemText,
+                        selected ? announcementStyles.dropdownItemTextActive : null,
+                      ]}>
+                      {item}
+                    </Text>
+                    {selected ? (
+                      <Icon name="check" size={17} color={colors.green} />
+                    ) : null}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </TouchableOpacity>
+        </Modal>
+
         {category === 'Otros' ? (
           <AppInput
             label="Detalle de categoria"
@@ -369,17 +438,21 @@ export function AnnouncementFormScreen({navigation, route}: Props) {
       {current ? (
         <AnimatedPanel delay={220} style={announcementStyles.actionRow}>
           <AppButton
-            label="Desactivar"
-            icon="visibility-off"
-            onPress={() => setActive(false)}
+            label={current.is_active ? 'Desactivar' : 'Activar nuevamente'}
+            icon={current.is_active ? 'visibility-off' : 'visibility'}
+            onPress={() => setActive(!current.is_active)}
             variant="secondary"
           />
-          <AppButton
-            label="Activar"
-            icon="visibility"
-            onPress={() => setActive(true)}
-            variant="secondary"
-          />
+          {canDelete ? (
+            <AppButton
+              label={deleting ? 'Eliminando...' : 'Eliminar'}
+              icon="delete-outline"
+              onPress={deleteAnnouncement}
+              loading={deleting}
+              disabled={deleting || saving}
+              variant="danger"
+            />
+          ) : null}
         </AnimatedPanel>
       ) : null}
     </ScrollView>
@@ -400,6 +473,19 @@ export function AnnouncementFormScreen({navigation, route}: Props) {
         style={announcementStyles.saveButton}
       />
     </View>
+    <ConfirmDialog
+      visible={showDeleteConfirm}
+      title="Eliminar anuncio"
+      message={`Se eliminara "${current?.title ?? ''}". El registro quedara auditado en la base de datos.`}
+      confirmLabel="Eliminar"
+      icon="campaign"
+      destructive
+      loading={deleting}
+      onCancel={() => {
+        if (!deleting) setShowDeleteConfirm(false);
+      }}
+      onConfirm={confirmDeleteAnnouncement}
+    />
     </View>
   );
 }
@@ -482,6 +568,72 @@ const announcementStyles = StyleSheet.create({
   },
   categoryOptionTextActive: {
     color: '#fff',
+  },
+  dropdownTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderColor: colors.line,
+    borderWidth: 1,
+    borderRadius: 12,
+    backgroundColor: '#f8faf7',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  dropdownTriggerText: {
+    flex: 1,
+    color: colors.ink,
+    fontWeight: '700',
+    fontSize: 15,
+  },
+  dropdownOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  dropdownMenu: {
+    backgroundColor: colors.surface,
+    borderRadius: 20,
+    paddingVertical: 8,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    shadowOffset: {width: 0, height: 8},
+    elevation: 8,
+  },
+  dropdownTitle: {
+    fontWeight: '900',
+    fontSize: 14,
+    color: colors.muted,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+  },
+  dropdownItemActive: {
+    backgroundColor: colors.greenSoft,
+  },
+  dropdownItemText: {
+    flex: 1,
+    color: colors.ink,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  dropdownItemTextActive: {
+    color: colors.green,
+    fontWeight: '900',
   },
   textArea: {
     minHeight: 140,

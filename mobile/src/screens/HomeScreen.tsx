@@ -13,6 +13,7 @@ import {
   AnimatedPressable,
   AppButton,
   BottomNav,
+  ConfirmDialog,
   EmptyState,
   Notice,
   SkeletonBlock,
@@ -37,13 +38,17 @@ export function HomeScreen({navigation}: Props) {
   const [loaded, setLoaded] = useState(false);
   const [unread, setUnread] = useState(0);
   const [error, setError] = useState('');
+  const [announcementToDelete, setAnnouncementToDelete] = useState<Announcement | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setRefreshing(true);
     setError('');
     try {
       const [itemsResult, countResult] = await Promise.allSettled([
-        apiClient.request<Announcement[]>('/announcements/'),
+        apiClient.request<Announcement[]>(
+          isSecretary ? '/announcements/?include_inactive=true' : '/announcements/',
+        ),
         apiClient.request<{count: number}>('/notificaciones/no-leidas/count'),
       ]);
 
@@ -66,7 +71,25 @@ export function HomeScreen({navigation}: Props) {
       setRefreshing(false);
       setLoaded(true);
     }
-  }, []);
+  }, [isSecretary]);
+
+  const confirmDeleteAnnouncement = async () => {
+    if (!announcementToDelete) return;
+    const previous = announcements;
+    const id = announcementToDelete.id;
+    setDeleting(true);
+    setError('');
+    setAnnouncements(current => current.filter(announcement => announcement.id !== id));
+    try {
+      await apiClient.request(`/announcements/${id}`, {method: 'DELETE'});
+      setAnnouncementToDelete(null);
+    } catch (err) {
+      setAnnouncements(previous);
+      setError(errorText(err, 'No se pudo eliminar el anuncio.'));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -159,7 +182,9 @@ export function HomeScreen({navigation}: Props) {
           <Text style={homeStyles.sectionTitle}>Anuncios</Text>
           <Text style={homeStyles.sectionHint}>Comunicados publicados para la asociacion</Text>
         </View>
-        <Text style={homeStyles.sectionMeta}>{announcements.length} publicados</Text>
+        <Text style={homeStyles.sectionMeta}>
+          {announcements.length} {isSecretary ? 'registrados' : 'publicados'}
+        </Text>
       </AnimatedPanel>
     </View>
   );
@@ -183,11 +208,18 @@ export function HomeScreen({navigation}: Props) {
         }
         renderItem={({item, index}) => (
           <AnimatedListItem index={index}>
-            <View style={homeStyles.announcementCard}>
+            <View
+              style={[
+                homeStyles.announcementCard,
+                !item.is_active ? homeStyles.inactiveCard : null,
+              ]}>
               {item.image_url ? (
                 <Image
                   source={{uri: `${API_BASE_URL}${item.image_url}`}}
-                  style={homeStyles.announcementImage}
+                  style={[
+                    homeStyles.announcementImage,
+                    !item.is_active ? homeStyles.inactiveImage : null,
+                  ]}
                 />
               ) : (
                 <View style={homeStyles.announcementImageFallback}>
@@ -199,21 +231,66 @@ export function HomeScreen({navigation}: Props) {
                   <Icon name="eco" size={14} color={colors.green} />
                   <Text style={homeStyles.categoryText}>{categoryLabel(item)}</Text>
                 </View>
+                {isSecretary ? (
+                  <View
+                    style={[
+                      homeStyles.statusPill,
+                      item.is_active ? homeStyles.activePill : homeStyles.inactivePill,
+                    ]}>
+                    <Icon
+                      name={item.is_active ? 'visibility' : 'visibility-off'}
+                      size={13}
+                      color={item.is_active ? colors.green : colors.muted}
+                    />
+                    <Text
+                      style={[
+                        homeStyles.statusText,
+                        item.is_active ? homeStyles.activeText : homeStyles.inactiveText,
+                      ]}>
+                      {item.is_active ? 'Activo' : 'Inactivo'}
+                    </Text>
+                  </View>
+                ) : null}
                 <Text style={homeStyles.announcementMeta}>{item.publisher_name}</Text>
               </View>
               <Text style={homeStyles.announcementTitle}>{item.title}</Text>
               <Text style={homeStyles.announcementBody}>{item.content}</Text>
-              {isSecretary ? (
-                <AnimatedPressable
-                  style={homeStyles.editButton}
-                  onPress={() => navigation.navigate('AnnouncementForm', {announcement: item})}>
-                  <Icon name="edit" size={17} color={colors.green} />
-                  <Text style={homeStyles.editText}>Editar</Text>
-                </AnimatedPressable>
-              ) : null}
+              <View style={homeStyles.cardActions}>
+                {isSecretary ? (
+                  <AnimatedPressable
+                    style={homeStyles.editButton}
+                    onPress={() => navigation.navigate('AnnouncementForm', {announcement: item})}>
+                    <Icon name="edit" size={17} color={colors.green} />
+                    <Text style={homeStyles.editText}>
+                      {item.is_active ? 'Editar' : 'Editar / activar'}
+                    </Text>
+                  </AnimatedPressable>
+                ) : null}
+                {isSecretary || user?.id === item.published_by ? (
+                  <AnimatedPressable
+                    style={homeStyles.deleteButton}
+                    onPress={() => setAnnouncementToDelete(item)}>
+                    <Icon name="delete-outline" size={17} color={colors.danger} />
+                    <Text style={homeStyles.deleteText}>Eliminar</Text>
+                  </AnimatedPressable>
+                ) : null}
+              </View>
             </View>
           </AnimatedListItem>
         )}
+      />
+      <ConfirmDialog
+        visible={Boolean(announcementToDelete)}
+        title="Eliminar anuncio"
+        message={`Se eliminara "${announcementToDelete?.title ?? ''}" y dejara de mostrarse en la aplicacion.`}
+        confirmLabel="Eliminar"
+        icon="campaign"
+        destructive
+        loading={deleting}
+        onCancel={() => {
+          if (!deleting) setAnnouncementToDelete(null);
+        }}
+        onConfirm={confirmDeleteAnnouncement}
       />
       <BottomNav active="home" />
     </View>
@@ -343,11 +420,18 @@ const homeStyles = StyleSheet.create({
     shadowOffset: {width: 0, height: 6},
     elevation: 2,
   },
+  inactiveCard: {
+    opacity: 0.84,
+    borderStyle: 'dashed',
+  },
   announcementImage: {
     height: 150,
     borderRadius: 13,
     marginBottom: 12,
     backgroundColor: '#eef2f1',
+  },
+  inactiveImage: {
+    opacity: 0.65,
   },
   announcementImageFallback: {
     height: 116,
@@ -360,7 +444,7 @@ const homeStyles = StyleSheet.create({
   cardTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
     gap: 10,
     marginBottom: 8,
   },
@@ -378,6 +462,30 @@ const homeStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
   },
+  statusPill: {
+    minHeight: 28,
+    borderRadius: 999,
+    paddingHorizontal: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  activePill: {
+    backgroundColor: colors.greenSoft,
+  },
+  inactivePill: {
+    backgroundColor: '#eef2f1',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  activeText: {
+    color: colors.green,
+  },
+  inactiveText: {
+    color: colors.muted,
+  },
   announcementTitle: {
     fontSize: 18,
     fontWeight: '900',
@@ -392,13 +500,20 @@ const homeStyles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 9,
   },
+  cardActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 12,
+  },
   editButton: {
+    flex: 1,
+    minWidth: 130,
     minHeight: 40,
     borderColor: colors.green,
     borderWidth: 1,
     borderRadius: 12,
     paddingHorizontal: 12,
-    marginTop: 12,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -407,6 +522,24 @@ const homeStyles = StyleSheet.create({
   },
   editText: {
     color: colors.green,
+    fontWeight: '900',
+  },
+  deleteButton: {
+    flex: 1,
+    minWidth: 120,
+    minHeight: 40,
+    borderColor: '#efcaca',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#fffafa',
+  },
+  deleteText: {
+    color: colors.danger,
     fontWeight: '900',
   },
   skeletonCard: {

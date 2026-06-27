@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 
+import { IsNull } from "typeorm";
+
 import { AppDataSource } from "../../config/data-source";
 import { env } from "../../config/env";
 import { AnnouncementEntity } from "../../infrastructure/persistence/entities/AnnouncementEntity";
@@ -49,6 +51,7 @@ export class AnnouncementService {
     const query = this.announcements
       .createQueryBuilder("announcement")
       .leftJoinAndSelect("announcement.publisher", "publisher")
+      .where("announcement.deleted_at IS NULL")
       .orderBy("announcement.created_at", "DESC");
 
     if (!filters.includeInactive || !filters.isSecretary) {
@@ -101,6 +104,28 @@ export class AnnouncementService {
     return announcementResponse(await this.announcements.save(announcement));
   }
 
+  async delete(id: number, currentUserId: number, isSecretary: boolean) {
+    const announcement = await this.findById(id);
+    const isOwner = announcement.publishedBy === currentUserId;
+
+    if (!isSecretary && !isOwner) {
+      throw new AppError(403, "Solo puedes eliminar anuncios creados por tu usuario.");
+    }
+
+    this.deleteImageFile(announcement.imageUrl);
+    announcement.imageUrl = null;
+    announcement.isActive = false;
+    announcement.deletedAt = new Date();
+    announcement.deletedBy = currentUserId;
+    await this.announcements.save(announcement);
+
+    return {
+      status: "ok",
+      message: "Anuncio eliminado correctamente.",
+      deleted_by: currentUserId,
+    };
+  }
+
   async setImage(id: number, file: Express.Multer.File) {
     const announcement = await this.findById(id);
     this.deleteImageFile(announcement.imageUrl);
@@ -131,7 +156,7 @@ export class AnnouncementService {
   }
 
   private async findById(id: number) {
-    const announcement = await this.announcements.findOne({ where: { id } });
+    const announcement = await this.announcements.findOne({ where: { id, deletedAt: IsNull() } });
     if (!announcement) {
       throw new AppError(404, "Anuncio no encontrado");
     }

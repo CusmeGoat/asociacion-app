@@ -32,6 +32,12 @@ export class AnnouncementEntity {
   @Column({ name: "image_url", type: "varchar", length: 300, nullable: true })
   imageUrl!: string | null;
 
+  @Column({ name: "deleted_at", type: "timestamptz", nullable: true })
+  deletedAt!: Date | null;
+
+  @Column({ name: "deleted_by", type: "integer", nullable: true })
+  deletedBy!: number | null;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 

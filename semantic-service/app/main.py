@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from app.document_service import delete_chunks, index_pdf, search_documents
+from app.document_service import delete_chunks, index_pdf, ocr_status, search_documents
 from app.embeddings import embed_text, is_model_loaded
 
 app = FastAPI(title="Semantic Document Service")
@@ -28,6 +28,7 @@ def health():
         "status": "ok",
         "service": "semantic-service",
         "model_loaded": is_model_loaded(),
+        **ocr_status(),
     }
 
 

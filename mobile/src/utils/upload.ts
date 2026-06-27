@@ -54,16 +54,6 @@ export async function copyPickedFileToCache(
     throw new Error(copy.copyError || 'No se pudo preparar el archivo para subirlo.');
   }
 
-  // Verificar que el archivo copiado no esté vacío antes de subir
-  const localPath = copy.localUri.replace(/^file:\/\//, '');
-  const stat = await ReactNativeBlobUtil.fs.stat(localPath);
-  if (!stat || stat.size === 0) {
-    throw new Error(
-      'El archivo seleccionado está vacío o no pudo leerse correctamente. ' +
-      'Intenta descargarlo primero al dispositivo antes de subirlo.',
-    );
-  }
-
   return {
     uri: copy.localUri,
     name,
@@ -72,9 +62,10 @@ export async function copyPickedFileToCache(
 }
 
 export function blobUtilUploadData(uri: string) {
-  // Eliminar el prefijo file:// o file:/// (triple barra en Android)
+  // Eliminar el prefijo file:// (ReactNativeBlobUtil.wrap espera una ruta normal en Android)
+  let cleanUri = uri;
   if (uri.startsWith('file://')) {
-    return ReactNativeBlobUtil.wrap(uri.replace(/^file:\/\//, ''));
+    cleanUri = uri.replace('file://', '');
   }
-  return ReactNativeBlobUtil.wrap(uri);
+  return ReactNativeBlobUtil.wrap(decodeURIComponent(cleanUri));
 }

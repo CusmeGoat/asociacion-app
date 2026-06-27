@@ -3,7 +3,7 @@ import path from "node:path";
 import { FileBlob, SpreadsheetFile } from "@oai/artifact-tool";
 
 const inputPath = "C:/Users/cusmej/Downloads/FORMATO PARA LAS INTERFACES.xlsx";
-const outputDir = path.resolve("../entregables/interfaces_graficas_preview");
+const outputDir = path.resolve("entregables/interfaces_graficas_preview");
 await fs.mkdir(outputDir, { recursive: true });
 
 const input = await FileBlob.load(inputPath);
