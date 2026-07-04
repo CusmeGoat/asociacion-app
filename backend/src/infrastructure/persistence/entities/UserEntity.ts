@@ -13,7 +13,7 @@ import { DocumentEntity } from "./DocumentEntity";
 import { NotificationEntity } from "./NotificationEntity";
 import { RoleEntity } from "./RoleEntity";
 
-@Entity({ name: "users" })
+@Entity({ name: "usuarios" })
 export class UserEntity {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -27,26 +27,26 @@ export class UserEntity {
   @Column({ type: "varchar", length: 20, nullable: true })
   cedula!: string | null;
 
-  @Column({ type: "varchar", length: 150, unique: true })
+  @Column({ name: "correo", type: "varchar", length: 150, unique: true })
   email!: string;
 
-  @Column({ name: "password_hash", type: "varchar", length: 255 })
+  @Column({ name: "contrasena_hash", type: "varchar", length: 255 })
   passwordHash!: string;
 
-  @Column({ name: "is_active", type: "boolean", default: true })
+  @Column({ name: "activo", type: "boolean", default: true })
   isActive!: boolean;
 
-  @Column({ name: "must_change_password", type: "boolean", default: false })
+  @Column({ name: "debe_cambiar_contrasena", type: "boolean", default: false })
   mustChangePassword!: boolean;
 
-  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
+  @CreateDateColumn({ name: "creado_en", type: "timestamptz" })
   createdAt!: Date;
 
   @ManyToMany(() => RoleEntity, (role) => role.users, { eager: true })
   @JoinTable({
-    name: "user_roles",
-    joinColumn: { name: "user_id", referencedColumnName: "id" },
-    inverseJoinColumn: { name: "role_id", referencedColumnName: "id" },
+    name: "roles_usuario",
+    joinColumn: { name: "usuario_id", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "rol_id", referencedColumnName: "id" },
   })
   roles!: RoleEntity[];
 

@@ -7,7 +7,7 @@ export class RoleEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ type: "varchar", length: 50, unique: true })
+  @Column({ name: "nombre", type: "varchar", length: 50, unique: true })
   name!: string;
 
   @ManyToMany(() => UserEntity, (user) => user.roles)

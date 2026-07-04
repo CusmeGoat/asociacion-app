@@ -1,0 +1,8 @@
+# Partimos de pgvector/pgvector:pg16 que ya incluye pgvector compilado
+# e instalamos PostGIS encima (mucho mas simple y confiable)
+FROM pgvector/pgvector:pg16
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+       postgresql-16-postgis-3 \
+    && rm -rf /var/lib/apt/lists/*

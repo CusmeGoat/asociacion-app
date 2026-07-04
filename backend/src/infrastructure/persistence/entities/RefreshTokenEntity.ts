@@ -1,22 +1,22 @@
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
 
-@Entity({ name: "refresh_tokens" })
+@Entity({ name: "tokens_actualizacion" })
 export class RefreshTokenEntity {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ name: "user_id", type: "integer" })
+  @Column({ name: "usuario_id", type: "integer" })
   userId!: number;
 
-  @Column({ name: "token_hash", type: "varchar", length: 255, unique: true })
+  @Column({ name: "hash_token", type: "varchar", length: 255, unique: true })
   tokenHash!: string;
 
-  @Column({ name: "expires_at", type: "timestamptz" })
+  @Column({ name: "expira_en", type: "timestamptz" })
   expiresAt!: Date;
 
-  @Column({ name: "revoked_at", type: "timestamptz", nullable: true })
+  @Column({ name: "revocado_en", type: "timestamptz", nullable: true })
   revokedAt!: Date | null;
 
-  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
+  @CreateDateColumn({ name: "creado_en", type: "timestamptz" })
   createdAt!: Date;
 }

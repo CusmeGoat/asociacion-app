@@ -32,24 +32,24 @@ export async function initializeDatabase(): Promise<void> {
   }
 
   await AppDataSource.query(`
-    CREATE TABLE IF NOT EXISTS refresh_tokens (
+    CREATE TABLE IF NOT EXISTS tokens_actualizacion (
       id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-      token_hash VARCHAR(255) NOT NULL UNIQUE,
-      expires_at TIMESTAMPTZ NOT NULL,
-      revoked_at TIMESTAMPTZ NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      usuario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+      hash_token VARCHAR(255) NOT NULL UNIQUE,
+      expira_en TIMESTAMPTZ NOT NULL,
+      revocado_en TIMESTAMPTZ NULL,
+      creado_en TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
 
   await AppDataSource.query(`
-    CREATE INDEX IF NOT EXISTS ix_refresh_tokens_token_hash
-    ON refresh_tokens (token_hash);
+    CREATE INDEX IF NOT EXISTS ix_tokens_actualizacion_hash_token
+    ON tokens_actualizacion (hash_token);
   `);
 
   await AppDataSource.query(`
-    INSERT INTO roles (name)
+    INSERT INTO roles (nombre)
     VALUES ('SOCIO'), ('SECRETARIO')
-    ON CONFLICT (name) DO NOTHING;
+    ON CONFLICT (nombre) DO NOTHING;
   `);
 }

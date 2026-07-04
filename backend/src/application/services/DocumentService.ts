@@ -56,7 +56,7 @@ export class DocumentService {
     }
 
     await this.semantic.deleteChunks(document.filename).catch(async () => {
-      await AppDataSource.query("DELETE FROM document_chunks WHERE document_name = $1", [
+      await AppDataSource.query("DELETE FROM fragmentos_documento WHERE nombre_documento = $1", [
         document.filename,
       ]);
     });

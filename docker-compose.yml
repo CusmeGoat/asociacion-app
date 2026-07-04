@@ -1,18 +1,42 @@
 version: "3.9"
 
 services:
-  db:
-    image: pgvector/pgvector:pg16
-    container_name: asociacion_db
-    restart: always
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    container_name: managerice_postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: asociacion
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: managerice
+      POSTGRES_PASSWORD: managerice123
+      POSTGRES_DB: managerice_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U managerice -d managerice_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+ 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: managerice_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@managerice.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+ 
 volumes:
   postgres_data:
+  pgadmin_data:
