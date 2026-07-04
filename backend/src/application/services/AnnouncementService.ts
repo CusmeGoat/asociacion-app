@@ -51,11 +51,11 @@ export class AnnouncementService {
     const query = this.announcements
       .createQueryBuilder("announcement")
       .leftJoinAndSelect("announcement.publisher", "publisher")
-      .where("announcement.deleted_at IS NULL")
-      .orderBy("announcement.created_at", "DESC");
+      .where("announcement.deletedAt IS NULL")
+      .orderBy("announcement.createdAt", "DESC");
 
     if (!filters.includeInactive || !filters.isSecretary) {
-      query.andWhere("announcement.is_active = true");
+      query.andWhere("announcement.isActive = true");
     }
     if (filters.categories) {
       query.andWhere("announcement.category IN (:...categories)", {

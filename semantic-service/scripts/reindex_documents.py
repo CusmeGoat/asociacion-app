@@ -42,9 +42,13 @@ def resolve_document_path(filename: str, stored_path: str) -> Path:
 
 def load_documents(name_filter: str | None, limit: int | None) -> list[dict]:
     sql = """
-        SELECT id, filename, file_path, status
-        FROM documents
-        ORDER BY created_at DESC
+        SELECT
+            id,
+            nombre_archivo AS filename,
+            ruta_archivo AS file_path,
+            estado AS status
+        FROM documentos
+        ORDER BY creado_en DESC
     """
     with get_connection() as conn:
         with conn.cursor() as cur:
@@ -70,8 +74,8 @@ def set_status(document_id: int, status: str, error_message: str | None = None) 
         with conn.cursor() as cur:
             cur.execute(
                 """
-                UPDATE documents
-                SET status = %s, error_message = %s
+                UPDATE documentos
+                SET estado = %s, mensaje_error = %s
                 WHERE id = %s
                 """,
                 (status, error_message, document_id),

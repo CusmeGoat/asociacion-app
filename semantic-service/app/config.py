@@ -14,7 +14,7 @@ def service_path(value: str) -> str:
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/asociacion",
+    "postgresql://managerice:managerice123@localhost:5432/managerice_db",
 )
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-large")
 VECTOR_DIMENSION = int(os.getenv("VECTOR_DIMENSION", "1024"))

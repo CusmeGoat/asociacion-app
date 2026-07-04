@@ -7,7 +7,7 @@ export const env = {
   port: Number(process.env.PORT ?? 8000),
   databaseUrl:
     process.env.DATABASE_URL ??
-    "postgresql://postgres:postgres@localhost:5432/asociacion",
+    "postgresql://managerice:managerice123@localhost:5432/managerice_db",
   jwtSecret: process.env.JWT_SECRET ?? process.env.SECRET_KEY ?? "dev-secret-key",
   jwtAlgorithm: (process.env.JWT_ALGORITHM ?? process.env.ALGORITHM ?? "HS256") as "HS256",
   accessTokenExpiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN ?? "15m",
