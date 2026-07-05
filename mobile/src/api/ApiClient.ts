@@ -54,6 +54,12 @@ function isFormDataBody(body: RequestInit['body']) {
   );
 }
 
+function addNgrokHeader(headers: Record<string, string>) {
+  if (API_BASE_URL.includes('ngrok')) {
+    headers['ngrok-skip-browser-warning'] = 'true';
+  }
+}
+
 export class ApiClient {
   async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
     const {auth, retry, timeoutMs, ...fetchOptions} = options;
@@ -64,6 +70,7 @@ export class ApiClient {
     } else {
       headers['Content-Type'] = 'application/json';
     }
+    addNgrokHeader(headers);
 
     if (auth !== false) {
       const token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
@@ -136,6 +143,7 @@ export class ApiClient {
       Accept: 'application/json',
       'Content-Type': 'multipart/form-data',
     };
+    addNgrokHeader(headers);
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
