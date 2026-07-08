@@ -2,12 +2,17 @@ import { env } from "../../config/env";
 import { AppError } from "../../shared/errors/AppError";
 
 export type SemanticSource = {
+  document_id?: number;
   content: string;
   page_number: number;
   document_name: string;
   chunk_index?: number;
   distance?: number;
+  score?: number;
   quality?: number;
+  preview_url?: string;
+  page_preview_url?: string;
+  excerpt?: string;
 };
 
 export type SemanticHealth = {
@@ -38,6 +43,23 @@ export class SemanticServiceClient {
 
   async deleteChunks(filename: string): Promise<void> {
     await this.post("/chunks/delete", { filename });
+  }
+
+  async renderPagePreview(input: {
+    filePath: string;
+    page: number;
+    dpi?: number;
+  }): Promise<Buffer> {
+    const response = await this.rawRequest(
+      "/preview-page",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      },
+      30000,
+    );
+    return Buffer.from(await response.arrayBuffer());
   }
 
   private async post<T = unknown>(
@@ -87,6 +109,38 @@ export class SemanticServiceClient {
     }
 
     return (await response.json()) as T;
+  }
+
+  private async rawRequest(
+    path: string,
+    options: RequestInit,
+    timeoutMs: number,
+  ): Promise<Response> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    const url = `${env.semanticServiceUrl}${path}`;
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+    } catch (error) {
+      throw new AppError(503, this.connectionErrorMessage(error));
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!response.ok) {
+      const detail = this.extractErrorText(await response.text());
+      throw new AppError(
+        response.status >= 500 ? 502 : response.status,
+        `No se pudo generar la previsualizacion del documento (${response.status}). Detalle: ${detail}`,
+      );
+    }
+
+    return response;
   }
 
   private connectionErrorMessage(error: unknown) {

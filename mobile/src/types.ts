@@ -48,18 +48,32 @@ export type NotificationItem = {
 };
 
 export type ChatSource = {
+  document_id?: number;
   content: string;
   page_number: number;
   document_name: string;
   chunk_index?: number;
   distance?: number;
+  score?: number;
   quality?: number;
+  preview_url?: string;
+  page_preview_url?: string;
+  excerpt?: string;
+};
+
+export type ChatTable = {
+  kind?: 'socios' | 'socio_lookup' | 'default';
+  caption?: string;
+  columns: string[];
+  rows: string[][];
 };
 
 export type ChatbotResponse = {
   respuesta: string;
+  respuesta_directa?: string;
   resumen?: string;
   puntos?: string[];
+  tabla?: ChatTable | null;
   aclaracion?: string | null;
   fragmentos?: ChatSource[];
   fuentes: ChatSource[];

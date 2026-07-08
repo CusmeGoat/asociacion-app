@@ -14,9 +14,9 @@ import {
   BottomNav,
   ConfirmDialog,
   EmptyState,
-  Notice,
   SkeletonBlock,
   StatusBadge,
+  Toast,
   ui,
 } from '../components/ui';
 import {API_BASE_URL} from '../config/api';
@@ -35,12 +35,12 @@ export function DocumentsScreen() {
   const [documentToDelete, setDocumentToDelete] = useState<DocumentItem | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const load = useCallback(async () => {
-    setRefreshing(true);
+  const load = useCallback(async (showRefresh = true) => {
+    if (showRefresh) setRefreshing(true);
     try {
       setDocuments(await apiClient.request<DocumentItem[]>('/documentos/'));
     } finally {
-      setRefreshing(false);
+      if (showRefresh) setRefreshing(false);
       setLoaded(true);
     }
   }, []);
@@ -48,6 +48,28 @@ export function DocumentsScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!message) return;
+    const timeout = setTimeout(
+      () => setMessage(''),
+      message.toLowerCase().includes('no se pudo') ? 5200 : 3200,
+    );
+    return () => clearTimeout(timeout);
+  }, [message]);
+
+  useEffect(() => {
+    const hasProcessingDocument = documents.some(item =>
+      ['pendiente', 'en_proceso'].includes(item.status),
+    );
+    if (!hasProcessingDocument) return;
+
+    const interval = setInterval(() => {
+      load(false).catch(error => console.error('[Documents Polling]', error));
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [documents, load]);
 
   const upload = async () => {
     setUploading(true);
@@ -96,7 +118,7 @@ export function DocumentsScreen() {
         ...current.filter(item => item.id !== result.document_id),
       ]);
       setLoaded(true);
-      setMessage('Documento subido. La indexacion semantica se procesa en segundo plano.');
+      setMessage('Documento subido. La indexacion se procesa en segundo plano.');
     } catch (err) {
       if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
         return;
@@ -154,6 +176,14 @@ export function DocumentsScreen() {
     return 'warning' as const;
   };
 
+  const statusLabel = (status: string) => {
+    if (status === 'pendiente') return 'Pendiente';
+    if (status === 'en_proceso') return 'Indexando';
+    if (status === 'completado') return 'Disponible';
+    if (status === 'error') return 'Error';
+    return status.replace(/_/g, ' ');
+  };
+
   const messageType = message.toLowerCase().includes('no se pudo') ? 'error' : 'info';
   const searchTerm = normalizeSearch(search);
   const filteredDocuments = searchTerm
@@ -184,7 +214,7 @@ export function DocumentsScreen() {
           </View>
         ) : null}
 
-        {message ? <Notice message={message} type={messageType} /> : null}
+        <Toast message={message} type={messageType} />
 
         <View style={documentsStyles.searchPanel}>
           <AppInput
@@ -212,7 +242,7 @@ export function DocumentsScreen() {
         <FlatList
           data={filteredDocuments}
           keyExtractor={item => String(item.id)}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load()} />}
           contentContainerStyle={documentsStyles.listContent}
           ListEmptyComponent={
             !loaded && refreshing ? (
@@ -239,7 +269,7 @@ export function DocumentsScreen() {
                   <View style={documentsStyles.titleRow}>
                     <Text style={documentsStyles.filename}>{item.filename}</Text>
                     <StatusBadge
-                      label={item.status}
+                      label={statusLabel(item.status)}
                       tone={statusTone(item.status)}
                       icon={item.status === 'completado' ? 'check-circle' : undefined}
                     />

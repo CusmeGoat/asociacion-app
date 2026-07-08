@@ -89,6 +89,23 @@ export class DocumentService {
     };
   }
 
+  async getPagePreview(documentId: number, page: number) {
+    if (!Number.isInteger(page) || page < 1) {
+      throw new AppError(400, "La pagina solicitada no es valida.");
+    }
+
+    const file = await this.getFile(documentId);
+    const image = await this.semantic.renderPagePreview({
+      filePath: file.absolutePath,
+      page,
+    });
+
+    return {
+      image,
+      filename: file.filename,
+    };
+  }
+
   private resolveDocumentFilePath(document: DocumentEntity) {
     const documentsRoot = path.resolve(process.cwd(), env.staticRoot, "documents");
     const storedPath = path.isAbsolute(document.filePath)

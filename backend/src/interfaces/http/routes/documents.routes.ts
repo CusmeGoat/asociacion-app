@@ -19,6 +19,23 @@ documentsRouter.get(
   }),
 );
 
+documentsRouter.get(
+  "/public/:documentId/paginas/:page/preview",
+  asyncHandler(async (req, res) => {
+    const preview = await service.getPagePreview(
+      Number(req.params.documentId),
+      Number(req.params.page),
+    );
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "public, max-age=300");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="${preview.filename.replace(/"/g, "")}-pagina-${req.params.page}.png"`,
+    );
+    res.send(preview.image);
+  }),
+);
+
 documentsRouter.use(authenticate);
 
 documentsRouter.get(

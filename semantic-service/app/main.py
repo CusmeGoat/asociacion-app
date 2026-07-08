@@ -1,7 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Response
 from pydantic import BaseModel
 
-from app.document_service import delete_chunks, index_pdf, ocr_status, search_documents
+from app.document_service import (
+    delete_chunks,
+    index_pdf,
+    ocr_status,
+    render_page_preview,
+    search_documents,
+)
 from app.embeddings import embed_text, is_model_loaded
 
 app = FastAPI(title="Semantic Document Service")
@@ -16,6 +22,12 @@ class IndexRequest(BaseModel):
 class SearchRequest(BaseModel):
     query: str
     limit: int = 6
+
+
+class PagePreviewRequest(BaseModel):
+    filePath: str
+    page: int
+    dpi: int = 145
 
 
 class DeleteChunksRequest(BaseModel):
@@ -34,7 +46,7 @@ def health():
 
 @app.post("/warmup")
 def warmup():
-    embed_text("consulta documental de prueba")
+    embed_text("consulta documental de prueba", "query")
     return {
         "status": "ok",
         "service": "semantic-service",
@@ -59,6 +71,15 @@ def index_document(req: IndexRequest):
 @app.post("/search")
 def search(req: SearchRequest):
     return {"fuentes": search_documents(req.query, req.limit)}
+
+
+@app.post("/preview-page")
+def preview_page(req: PagePreviewRequest):
+    try:
+        image = render_page_preview(req.filePath, req.page, req.dpi)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    return Response(content=image, media_type="image/png")
 
 
 @app.post("/chunks/delete")

@@ -363,6 +363,36 @@ export function Notice({message, type = 'info'}: NoticeProps) {
   );
 }
 
+export function Toast({message, type = 'info'}: NoticeProps) {
+  if (!message) return null;
+
+  const icon =
+    type === 'success'
+      ? 'check-circle'
+      : type === 'error'
+        ? 'error-outline'
+        : type === 'warning'
+          ? 'warning'
+          : 'info';
+  const color =
+    type === 'success'
+      ? colors.green
+      : type === 'error'
+        ? colors.danger
+        : type === 'warning'
+          ? colors.warning
+          : colors.info;
+
+  return (
+    <View pointerEvents="none" style={ui.toastWrap}>
+      <AnimatedPanel entrance="down" style={[ui.toast, {borderColor: `${color}55`}]}>
+        <Icon name={icon} size={20} color={color} />
+        <Text style={ui.toastText}>{message}</Text>
+      </AnimatedPanel>
+    </View>
+  );
+}
+
 type ConfirmDialogProps = {
   visible: boolean;
   title: string;
@@ -782,6 +812,34 @@ export const ui = StyleSheet.create({
   noticeText: {
     flex: 1,
     color: colors.ink,
+    lineHeight: 19,
+  },
+  toastWrap: {
+    position: 'absolute',
+    top: 12,
+    left: 14,
+    right: 14,
+    zIndex: 80,
+    elevation: 80,
+  },
+  toast: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    shadowColor: colors.greenDark,
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 7},
+    elevation: 5,
+  },
+  toastText: {
+    flex: 1,
+    color: colors.ink,
+    fontWeight: '800',
     lineHeight: 19,
   },
   modalOverlay: {
