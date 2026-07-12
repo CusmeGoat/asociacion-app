@@ -165,15 +165,13 @@ export function HomeScreen({navigation}: Props) {
         ))}
       </View>
 
-      {isSecretary ? (
-        <AnimatedPanel delay={260}>
-          <AppButton
-            label="Crear anuncio"
-            icon="add-circle-outline"
-            onPress={() => navigation.navigate('AnnouncementForm')}
-          />
-        </AnimatedPanel>
-      ) : null}
+      <AnimatedPanel delay={260}>
+        <AppButton
+          label="Crear anuncio"
+          icon="add-circle-outline"
+          onPress={() => navigation.navigate('AnnouncementForm')}
+        />
+      </AnimatedPanel>
 
       {error ? <Notice message={error} type="error" /> : null}
 
@@ -206,7 +204,10 @@ export function HomeScreen({navigation}: Props) {
             />
           )
         }
-        renderItem={({item, index}) => (
+        renderItem={({item, index}) => {
+          const canManageAnnouncement = isSecretary || user?.id === item.published_by;
+
+          return (
           <AnimatedListItem index={index}>
             <View
               style={[
@@ -256,7 +257,7 @@ export function HomeScreen({navigation}: Props) {
               <Text style={homeStyles.announcementTitle}>{item.title}</Text>
               <Text style={homeStyles.announcementBody}>{item.content}</Text>
               <View style={homeStyles.cardActions}>
-                {isSecretary ? (
+                {canManageAnnouncement ? (
                   <AnimatedPressable
                     style={homeStyles.editButton}
                     onPress={() => navigation.navigate('AnnouncementForm', {announcement: item})}>
@@ -266,7 +267,7 @@ export function HomeScreen({navigation}: Props) {
                     </Text>
                   </AnimatedPressable>
                 ) : null}
-                {isSecretary || user?.id === item.published_by ? (
+                {canManageAnnouncement ? (
                   <AnimatedPressable
                     style={homeStyles.deleteButton}
                     onPress={() => setAnnouncementToDelete(item)}>
@@ -277,7 +278,8 @@ export function HomeScreen({navigation}: Props) {
               </View>
             </View>
           </AnimatedListItem>
-        )}
+          );
+        }}
       />
       <ConfirmDialog
         visible={Boolean(announcementToDelete)}

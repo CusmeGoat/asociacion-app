@@ -25,7 +25,7 @@ const screenOptions = {
 };
 
 export function AppNavigator() {
-  const {user} = useAuth();
+  const {user, isSecretary} = useAuth();
 
   if (!user) {
     return (
@@ -68,7 +68,9 @@ export function AppNavigator() {
         component={NotificationsScreen}
         options={{title: 'Notificaciones'}}
       />
-      <Stack.Screen name="Users" component={UsersScreen} options={{title: 'Usuarios'}} />
+      {isSecretary ? (
+        <Stack.Screen name="Users" component={UsersScreen} options={{title: 'Usuarios'}} />
+      ) : null}
       <Stack.Screen
         name="AnnouncementForm"
         component={AnnouncementFormScreen}

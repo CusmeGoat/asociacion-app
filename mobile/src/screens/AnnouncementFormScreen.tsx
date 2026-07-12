@@ -108,6 +108,7 @@ export function AnnouncementFormScreen({navigation, route}: Props) {
 
   const currentImageUri = current?.image_url && !removeImage ? assetUrl(current.image_url) : null;
   const previewUri = selectedImage?.uri ?? currentImageUri;
+  const canEdit = !current || isSecretary || user?.id === current.published_by;
   const canDelete = Boolean(current && (isSecretary || user?.id === current.published_by));
 
   const pickImage = async () => {
@@ -173,6 +174,11 @@ export function AnnouncementFormScreen({navigation, route}: Props) {
 
   const submit = async () => {
     if (saving) return;
+    if (!canEdit) {
+      setMessageType('error');
+      setMessage('Solo puedes editar anuncios creados por tu usuario.');
+      return;
+    }
     if (!title.trim() || !content.trim()) {
       setMessageType('error');
       setMessage('Completa el titulo y el contenido del anuncio.');
@@ -435,14 +441,16 @@ export function AnnouncementFormScreen({navigation, route}: Props) {
         </View>
       </AnimatedPanel>
 
-      {current ? (
+      {current && (isSecretary || canDelete) ? (
         <AnimatedPanel delay={220} style={announcementStyles.actionRow}>
-          <AppButton
-            label={current.is_active ? 'Desactivar' : 'Activar nuevamente'}
-            icon={current.is_active ? 'visibility-off' : 'visibility'}
-            onPress={() => setActive(!current.is_active)}
-            variant="secondary"
-          />
+          {isSecretary ? (
+            <AppButton
+              label={current.is_active ? 'Desactivar' : 'Activar nuevamente'}
+              icon={current.is_active ? 'visibility-off' : 'visibility'}
+              onPress={() => setActive(!current.is_active)}
+              variant="secondary"
+            />
+          ) : null}
           {canDelete ? (
             <AppButton
               label={deleting ? 'Eliminando...' : 'Eliminar'}
@@ -468,7 +476,7 @@ export function AnnouncementFormScreen({navigation, route}: Props) {
         icon="save"
         onPress={submit}
         loading={saving}
-        disabled={saving}
+        disabled={saving || !canEdit}
         hitSlop={18}
         style={announcementStyles.saveButton}
       />

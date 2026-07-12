@@ -81,16 +81,21 @@ export class AnnouncementService {
       otros_subtype: string | null;
       is_active: boolean;
     }>,
+    currentUserId: number,
+    isSecretary: boolean,
     file?: Express.Multer.File,
   ) {
     const announcement = await this.findById(id);
+    this.ensureCanModify(announcement, currentUserId, isSecretary);
+
     announcement.title = input.title ?? announcement.title;
     announcement.content = input.content ?? announcement.content;
     announcement.category = input.category ?? announcement.category;
     announcement.otrosSubtype =
       input.otros_subtype === undefined ? announcement.otrosSubtype : input.otros_subtype;
-    announcement.isActive =
-      input.is_active === undefined ? announcement.isActive : input.is_active;
+    if (isSecretary && input.is_active !== undefined) {
+      announcement.isActive = input.is_active;
+    }
     if (file) {
       this.deleteImageFile(announcement.imageUrl);
       announcement.imageUrl = `/static/images/${file.filename}`;
@@ -106,11 +111,7 @@ export class AnnouncementService {
 
   async delete(id: number, currentUserId: number, isSecretary: boolean) {
     const announcement = await this.findById(id);
-    const isOwner = announcement.publishedBy === currentUserId;
-
-    if (!isSecretary && !isOwner) {
-      throw new AppError(403, "Solo puedes eliminar anuncios creados por tu usuario.");
-    }
+    this.ensureCanModify(announcement, currentUserId, isSecretary);
 
     this.deleteImageFile(announcement.imageUrl);
     announcement.imageUrl = null;
@@ -126,15 +127,22 @@ export class AnnouncementService {
     };
   }
 
-  async setImage(id: number, file: Express.Multer.File) {
+  async setImage(
+    id: number,
+    file: Express.Multer.File,
+    currentUserId: number,
+    isSecretary: boolean,
+  ) {
     const announcement = await this.findById(id);
+    this.ensureCanModify(announcement, currentUserId, isSecretary);
     this.deleteImageFile(announcement.imageUrl);
     announcement.imageUrl = `/static/images/${file.filename}`;
     return announcementResponse(await this.announcements.save(announcement));
   }
 
-  async deleteImage(id: number) {
+  async deleteImage(id: number, currentUserId: number, isSecretary: boolean) {
     const announcement = await this.findById(id);
+    this.ensureCanModify(announcement, currentUserId, isSecretary);
     this.deleteImageFile(announcement.imageUrl);
     announcement.imageUrl = null;
     return announcementResponse(await this.announcements.save(announcement));
@@ -161,6 +169,18 @@ export class AnnouncementService {
       throw new AppError(404, "Anuncio no encontrado");
     }
     return announcement;
+  }
+
+  private ensureCanModify(
+    announcement: AnnouncementEntity,
+    currentUserId: number,
+    isSecretary: boolean,
+  ) {
+    const isOwner = announcement.publishedBy === currentUserId;
+
+    if (!isSecretary && !isOwner) {
+      throw new AppError(403, "Solo puedes modificar anuncios creados por tu usuario.");
+    }
   }
 
   private deleteImageFile(imageUrl: string | null) {
