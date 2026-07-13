@@ -1,4 +1,5 @@
-import React, {useEffect, useRef, useState} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
   FlatList,
   Image,
@@ -15,6 +16,7 @@ import {
 import Icon from 'react-native-vector-icons/MaterialIcons';
 
 import {apiClient} from '../api/ApiClient';
+import {useAuth} from '../auth/AuthContext';
 import {
   AnimatedListItem,
   AnimatedPressable,
@@ -39,19 +41,71 @@ type Message = {
   fragmentos?: ChatSource[];
 };
 
+const CHAT_HISTORY_KEY_PREFIX = 'chat_history_v1';
+const INITIAL_MESSAGES: Message[] = [
+  {
+    role: 'bot',
+    text: 'Soy el asistente documental. Consulto unicamente los documentos cargados por la asociacion.',
+    fuentes: [],
+  },
+];
+
 export function ChatScreen() {
+  const {user} = useAuth();
   const listRef = useRef<FlatList<Message>>(null);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'bot',
-      text: 'Soy el asistente documental. Consulto unicamente los documentos cargados por la asociacion.',
-      fuentes: [],
-    },
-  ]);
+  const historyKey = useMemo(
+    () => (user?.id ? `${CHAT_HISTORY_KEY_PREFIX}:${user.id}` : null),
+    [user?.id],
+  );
+  const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
+  const [historyReady, setHistoryReady] = useState(false);
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [selectedSource, setSelectedSource] = useState<ChatSource | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setHistoryReady(false);
+
+    const loadHistory = async () => {
+      if (!historyKey) {
+        setMessages(INITIAL_MESSAGES);
+        setHistoryReady(true);
+        return;
+      }
+
+      try {
+        const stored = await AsyncStorage.getItem(historyKey);
+        const parsed = stored ? JSON.parse(stored) : null;
+        if (active && isStoredMessages(parsed)) {
+          setMessages(parsed.length ? parsed : INITIAL_MESSAGES);
+        } else if (active) {
+          setMessages(INITIAL_MESSAGES);
+        }
+      } catch {
+        if (active) {
+          setMessages(INITIAL_MESSAGES);
+        }
+      } finally {
+        if (active) {
+          setHistoryReady(true);
+          setTimeout(() => listRef.current?.scrollToEnd({animated: false}), 80);
+        }
+      }
+    };
+
+    loadHistory();
+
+    return () => {
+      active = false;
+    };
+  }, [historyKey]);
+
+  useEffect(() => {
+    if (!historyReady || !historyKey) return;
+    AsyncStorage.setItem(historyKey, JSON.stringify(messages)).catch(() => undefined);
+  }, [historyKey, historyReady, messages]);
 
   useEffect(() => {
     const show = Keyboard.addListener('keyboardDidShow', (event: KeyboardEvent) => {
@@ -246,6 +300,20 @@ export function ChatScreen() {
       </View>
       {keyboardHeight ? null : <BottomNav active="chat" />}
     </View>
+  );
+}
+
+function isStoredMessages(value: unknown): value is Message[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      item =>
+        item &&
+        typeof item === 'object' &&
+        ((item as Message).role === 'user' || (item as Message).role === 'bot') &&
+        typeof (item as Message).text === 'string' &&
+        Array.isArray((item as Message).fuentes),
+    )
   );
 }
 

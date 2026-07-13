@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, {createContext, useContext, useEffect, useMemo, useState} from 'react';
 
 import {apiClient} from '../api/ApiClient';
@@ -14,6 +15,20 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const CHAT_HISTORY_KEY_PREFIX = 'chat_history_v1';
+
+async function clearChatHistory(userId?: number | null) {
+  if (userId) {
+    await AsyncStorage.removeItem(`${CHAT_HISTORY_KEY_PREFIX}:${userId}`);
+    return;
+  }
+
+  const keys = await AsyncStorage.getAllKeys();
+  const chatKeys = keys.filter(key => key.startsWith(`${CHAT_HISTORY_KEY_PREFIX}:`));
+  if (chatKeys.length) {
+    await AsyncStorage.multiRemove(chatKeys);
+  }
+}
 
 export function AuthProvider({children}: {children: React.ReactNode}) {
   const [user, setUser] = useState<User | null>(null);
@@ -26,7 +41,10 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
 
   useEffect(() => {
     reloadMe()
-      .catch(() => apiClient.clearTokens())
+      .catch(async () => {
+        await clearChatHistory();
+        await apiClient.clearTokens();
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -56,6 +74,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
         });
       },
       logout: async () => {
+        const currentUserId = user?.id;
         const refreshToken = await apiClient.getRefreshToken();
         if (refreshToken) {
           await apiClient.request('/auth/logout', {
@@ -64,6 +83,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
             body: JSON.stringify({refresh_token: refreshToken}),
           }).catch(() => undefined);
         }
+        await clearChatHistory(currentUserId);
         await apiClient.clearTokens();
         setUser(null);
       },
