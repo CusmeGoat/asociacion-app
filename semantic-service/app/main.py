@@ -14,7 +14,7 @@ app = FastAPI(title="Semantic Document Service")
 
 
 class IndexRequest(BaseModel):
-    documentId: int
+    documentId: str
     filename: str
     filePath: str
 

@@ -1,18 +1,20 @@
 import {
+  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
 } from "typeorm";
+import { randomUUID } from "crypto";
 
 import { UserEntity } from "./UserEntity";
 
 @Entity({ name: "anuncios" })
 export class AnnouncementEntity {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryColumn({ type: "text" })
+  id!: string;
 
   @Column({ name: "titulo", type: "varchar", length: 150 })
   title!: string;
@@ -23,28 +25,35 @@ export class AnnouncementEntity {
   @Column({ name: "categoria", type: "varchar", length: 50 })
   category!: string;
 
-  @Column({ name: "otros_subtipo", type: "varchar", length: 100, nullable: true })
+  @Column({ name: "otrosSubtipo", type: "varchar", nullable: true })
   otrosSubtype!: string | null;
 
   @Column({ name: "activo", type: "boolean", default: true })
   isActive!: boolean;
 
-  @Column({ name: "url_imagen", type: "varchar", length: 300, nullable: true })
+  @Column({ name: "urlImagen", type: "varchar", nullable: true })
   imageUrl!: string | null;
 
-  @Column({ name: "eliminado_en", type: "timestamptz", nullable: true })
+  @Column({ name: "eliminadoEn", type: "timestamptz", nullable: true })
   deletedAt!: Date | null;
 
-  @Column({ name: "eliminado_por", type: "integer", nullable: true })
-  deletedBy!: number | null;
+  @Column({ name: "eliminadoPorId", type: "text", nullable: true })
+  deletedBy!: string | null;
 
-  @CreateDateColumn({ name: "creado_en", type: "timestamptz" })
+  @CreateDateColumn({ name: "createdAt", type: "timestamptz" })
   createdAt!: Date;
 
-  @Column({ name: "publicado_por", type: "integer" })
-  publishedBy!: number;
+  @Column({ name: "publicadoPorId", type: "text" })
+  publishedBy!: string;
 
   @ManyToOne(() => UserEntity, (user) => user.announcements, { eager: true })
-  @JoinColumn({ name: "publicado_por" })
+  @JoinColumn({ name: "publicadoPorId" })
   publisher!: UserEntity;
+
+  @BeforeInsert()
+  ensureId() {
+    if (!this.id) {
+      this.id = randomUUID();
+    }
+  }
 }

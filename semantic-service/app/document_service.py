@@ -253,7 +253,7 @@ def index_pdf(file_path: str, filename: str) -> int:
     try:
         with get_connection() as conn:
             with conn.cursor() as cur:
-                cur.execute("DELETE FROM fragmentos_documento WHERE nombre_documento = %s", (filename,))
+                cur.execute('DELETE FROM fragmentos_documento WHERE "nombreDocumento" = %s', (filename,))
 
                 for page_number, page in enumerate(document, start=1):
                     page_text = _extract_page_text(page, page_number, filename)
@@ -265,7 +265,7 @@ def index_pdf(file_path: str, filename: str) -> int:
                         cur.execute(
                             """
                             INSERT INTO fragmentos_documento
-                              (nombre_documento, contenido, vector_embedding, numero_pagina, indice_fragmento)
+                              ("nombreDocumento", contenido, "vectorEmbedding", "numeroPagina", "indiceFragmento")
                             VALUES (%s, %s, %s::vector, %s, %s)
                             """,
                             (filename, chunk, vector, page_number, chunk_index),
@@ -317,14 +317,14 @@ def search_documents(query: str, limit: int) -> list[dict]:
                 SELECT
                   d.id AS document_id,
                   dc.contenido AS content,
-                  dc.numero_pagina AS page_number,
-                  dc.nombre_documento AS document_name,
-                  dc.indice_fragmento AS chunk_index,
-                  dc.vector_embedding <=> %s::vector AS distance
+                  dc."numeroPagina" AS page_number,
+                  dc."nombreDocumento" AS document_name,
+                  dc."indiceFragmento" AS chunk_index,
+                  dc."vectorEmbedding" <=> %s::vector AS distance
                 FROM fragmentos_documento dc
-                INNER JOIN documentos d ON d.nombre_archivo = dc.nombre_documento
-                WHERE d.estado = 'completado'
-                ORDER BY dc.vector_embedding <=> %s::vector
+                INNER JOIN documentos d ON d."archivoNombre" = dc."nombreDocumento"
+                WHERE d."chatbotEstado" = 'completado'
+                ORDER BY dc."vectorEmbedding" <=> %s::vector
                 LIMIT %s
                 """,
                 (vector, vector, fetch_limit),
@@ -376,7 +376,7 @@ def search_documents(query: str, limit: int) -> list[dict]:
 def delete_chunks(filename: str) -> int:
     with get_connection() as conn:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM fragmentos_documento WHERE nombre_documento = %s", (filename,))
+            cur.execute('DELETE FROM fragmentos_documento WHERE "nombreDocumento" = %s', (filename,))
             deleted = cur.rowcount
         conn.commit()
     return deleted

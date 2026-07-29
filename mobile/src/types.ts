@@ -1,5 +1,5 @@
 export type User = {
-  id: number;
+  id: string;
   nombres: string;
   apellidos: string;
   cedula: string | null;
@@ -11,7 +11,7 @@ export type User = {
 };
 
 export type Announcement = {
-  id: number;
+  id: string;
   title: string;
   content: string;
   category: string;
@@ -19,19 +19,19 @@ export type Announcement = {
   is_active: boolean;
   image_url?: string | null;
   deleted_at?: string | null;
-  deleted_by?: number | null;
+  deleted_by?: string | null;
   created_at: string;
-  published_by: number;
+  published_by: string;
   publisher_name: string;
 };
 
 export type DocumentItem = {
-  id: number;
+  id: string;
   filename: string;
   file_path: string;
   preview_url?: string;
   download_url?: string;
-  uploaded_by_id: number;
+  uploaded_by_id: string;
   uploader_name: string;
   status: string;
   error_message?: string | null;
@@ -39,7 +39,7 @@ export type DocumentItem = {
 };
 
 export type NotificationItem = {
-  id: number;
+  id: string;
   title: string;
   message: string;
   announcement_type: string;
@@ -48,7 +48,7 @@ export type NotificationItem = {
 };
 
 export type ChatSource = {
-  document_id?: number;
+  document_id?: string;
   content: string;
   page_number: number;
   document_name: string;

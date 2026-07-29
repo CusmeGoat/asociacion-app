@@ -79,7 +79,7 @@ export function DocumentsScreen() {
       const localFile = await copyPickedFileToCache(file, 'documento.pdf', 'application/pdf');
 
       const result = await apiClient.uploadForm<{
-        document_id: number;
+        document_id: string;
         document: string;
         message?: string;
       }>(
@@ -105,7 +105,7 @@ export function DocumentsScreen() {
         file_path: `/static/documents/${encodeURIComponent(filename)}`,
         preview_url: previewPath,
         download_url: previewPath,
-        uploaded_by_id: user?.id ?? 0,
+        uploaded_by_id: user?.id ?? '',
         uploader_name: user ? `${user.nombres} ${user.apellidos}` : 'Usuario actual',
         status: 'pendiente',
         error_message: null,

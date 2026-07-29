@@ -5,4 +5,8 @@ from app.config import DATABASE_URL
 
 
 def get_connection():
-    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    return psycopg2.connect(
+        DATABASE_URL,
+        cursor_factory=RealDictCursor,
+        options="-c search_path=public",
+    )

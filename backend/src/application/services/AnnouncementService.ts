@@ -23,7 +23,7 @@ export class AnnouncementService {
       category: string;
       otros_subtype?: string | null;
     },
-    currentUserId: number,
+    currentUserId: string,
     file?: Express.Multer.File,
   ) {
     const announcement = await this.announcements.save(
@@ -73,7 +73,7 @@ export class AnnouncementService {
   }
 
   async update(
-    id: number,
+    id: string,
     input: Partial<{
       title: string;
       content: string;
@@ -81,7 +81,7 @@ export class AnnouncementService {
       otros_subtype: string | null;
       is_active: boolean;
     }>,
-    currentUserId: number,
+    currentUserId: string,
     isSecretary: boolean,
     file?: Express.Multer.File,
   ) {
@@ -103,13 +103,13 @@ export class AnnouncementService {
     return announcementResponse(await this.announcements.save(announcement));
   }
 
-  async setActive(id: number, active: boolean) {
+  async setActive(id: string, active: boolean) {
     const announcement = await this.findById(id);
     announcement.isActive = active;
     return announcementResponse(await this.announcements.save(announcement));
   }
 
-  async delete(id: number, currentUserId: number, isSecretary: boolean) {
+  async delete(id: string, currentUserId: string, isSecretary: boolean) {
     const announcement = await this.findById(id);
     this.ensureCanModify(announcement, currentUserId, isSecretary);
 
@@ -128,9 +128,9 @@ export class AnnouncementService {
   }
 
   async setImage(
-    id: number,
+    id: string,
     file: Express.Multer.File,
-    currentUserId: number,
+    currentUserId: string,
     isSecretary: boolean,
   ) {
     const announcement = await this.findById(id);
@@ -140,7 +140,7 @@ export class AnnouncementService {
     return announcementResponse(await this.announcements.save(announcement));
   }
 
-  async deleteImage(id: number, currentUserId: number, isSecretary: boolean) {
+  async deleteImage(id: string, currentUserId: string, isSecretary: boolean) {
     const announcement = await this.findById(id);
     this.ensureCanModify(announcement, currentUserId, isSecretary);
     this.deleteImageFile(announcement.imageUrl);
@@ -163,7 +163,7 @@ export class AnnouncementService {
     await this.notifications.save(notifications);
   }
 
-  private async findById(id: number) {
+  private async findById(id: string) {
     const announcement = await this.announcements.findOne({ where: { id, deletedAt: IsNull() } });
     if (!announcement) {
       throw new AppError(404, "Anuncio no encontrado");
@@ -173,7 +173,7 @@ export class AnnouncementService {
 
   private ensureCanModify(
     announcement: AnnouncementEntity,
-    currentUserId: number,
+    currentUserId: string,
     isSecretary: boolean,
   ) {
     const isOwner = announcement.publishedBy === currentUserId;

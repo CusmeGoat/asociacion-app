@@ -1,22 +1,30 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, Entity, PrimaryColumn } from "typeorm";
+import { randomUUID } from "crypto";
 
 @Entity({ name: "tokens_actualizacion" })
 export class RefreshTokenEntity {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryColumn({ type: "text" })
+  id!: string;
 
-  @Column({ name: "usuario_id", type: "integer" })
-  userId!: number;
+  @Column({ name: "usuarioId", type: "text" })
+  userId!: string;
 
-  @Column({ name: "hash_token", type: "varchar", length: 255, unique: true })
+  @Column({ name: "hashToken", type: "varchar", unique: true })
   tokenHash!: string;
 
-  @Column({ name: "expira_en", type: "timestamptz" })
+  @Column({ name: "expiraEn", type: "timestamptz" })
   expiresAt!: Date;
 
-  @Column({ name: "revocado_en", type: "timestamptz", nullable: true })
+  @Column({ name: "revocadoEn", type: "timestamptz", nullable: true })
   revokedAt!: Date | null;
 
-  @CreateDateColumn({ name: "creado_en", type: "timestamptz" })
+  @CreateDateColumn({ name: "createdAt", type: "timestamptz" })
   createdAt!: Date;
+
+  @BeforeInsert()
+  ensureId() {
+    if (!this.id) {
+      this.id = randomUUID();
+    }
+  }
 }

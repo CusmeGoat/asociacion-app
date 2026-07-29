@@ -47,7 +47,7 @@ export function NotificationsScreen() {
     }
   };
 
-  const markOne = async (id: number) => {
+  const markOne = async (id: string) => {
     await apiClient.request(`/notificaciones/${id}/leer`, {method: 'PATCH'});
     await load();
   };

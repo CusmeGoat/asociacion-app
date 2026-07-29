@@ -2,7 +2,7 @@ import { env } from "../../config/env";
 import { AppError } from "../../shared/errors/AppError";
 
 export type SemanticSource = {
-  document_id?: number;
+  document_id?: string;
   content: string;
   page_number: number;
   document_name: string;
@@ -26,7 +26,7 @@ export class SemanticServiceClient {
   }
 
   async indexDocument(input: {
-    documentId: number;
+    documentId: string;
     filename: string;
     filePath: string;
   }): Promise<void> {

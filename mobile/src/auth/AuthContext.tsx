@@ -8,7 +8,7 @@ type AuthContextValue = {
   user: User | null;
   loading: boolean;
   isSecretary: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (cedula: string, password: string) => Promise<void>;
   register: (input: Record<string, string>) => Promise<void>;
   logout: () => Promise<void>;
   reloadMe: () => Promise<void>;
@@ -17,7 +17,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 const CHAT_HISTORY_KEY_PREFIX = 'chat_history_v1';
 
-async function clearChatHistory(userId?: number | null) {
+async function clearChatHistory(userId?: string | null) {
   if (userId) {
     await AsyncStorage.removeItem(`${CHAT_HISTORY_KEY_PREFIX}:${userId}`);
     return;
@@ -53,7 +53,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       user,
       loading,
       isSecretary: user?.roles.includes('SECRETARIO') ?? false,
-      login: async (email, password) => {
+      login: async (cedula, password) => {
         const data = await apiClient.request<{
           access_token: string;
           refresh_token: string;
@@ -61,7 +61,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
         }>('/auth/login', {
           method: 'POST',
           auth: false,
-          body: JSON.stringify({email, password}),
+          body: JSON.stringify({cedula, password}),
         });
         await apiClient.saveTokens(data.access_token, data.refresh_token);
         setUser(data.user);

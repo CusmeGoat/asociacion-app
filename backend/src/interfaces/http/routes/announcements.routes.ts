@@ -47,7 +47,7 @@ announcementsRouter.put(
   asyncHandler(async (req, res) => {
     res.json(
       await service.update(
-        Number(req.params.id),
+        req.params.id,
         req.body,
         req.user!.id,
         isSecretary(req),
@@ -61,7 +61,7 @@ announcementsRouter.patch(
   "/:id/deactivate",
   authorize("SECRETARIO"),
   asyncHandler(async (req, res) => {
-    res.json(await service.setActive(Number(req.params.id), false));
+    res.json(await service.setActive(req.params.id, false));
   }),
 );
 
@@ -69,7 +69,7 @@ announcementsRouter.patch(
   "/:id/activate",
   authorize("SECRETARIO"),
   asyncHandler(async (req, res) => {
-    res.json(await service.setActive(Number(req.params.id), true));
+    res.json(await service.setActive(req.params.id, true));
   }),
 );
 
@@ -83,7 +83,7 @@ announcementsRouter.patch(
     }
     res.json(
       await service.setImage(
-        Number(req.params.id),
+        req.params.id,
         req.file!,
         req.user!.id,
         isSecretary(req),
@@ -98,7 +98,7 @@ announcementsRouter.delete(
   asyncHandler(async (req, res) => {
     res.json(
       await service.deleteImage(
-        Number(req.params.id),
+        req.params.id,
         req.user!.id,
         isSecretary(req),
       ),
@@ -112,7 +112,7 @@ announcementsRouter.delete(
   asyncHandler(async (req, res) => {
     res.json(
       await service.delete(
-        Number(req.params.id),
+        req.params.id,
         req.user!.id,
         isSecretary(req),
       ),

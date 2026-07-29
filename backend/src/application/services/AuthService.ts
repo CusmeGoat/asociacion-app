@@ -21,8 +21,9 @@ export class AuthService {
   private passwordResetTokens = AppDataSource.getRepository(PasswordResetTokenEntity);
   private email = new EmailService();
 
-  async login(email: string, password: string) {
-    const user = await this.users.findOne({ where: { email } });
+  async login(cedula: string, password: string) {
+    const cleanCedula = this.normalizeCedula(cedula);
+    const user = await this.users.findOne({ where: { cedula: cleanCedula } });
     if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
       throw new AppError(401, "Credenciales incorrectas");
     }
@@ -159,6 +160,10 @@ export class AuthService {
       token_type: "bearer",
       user: userResponse(user),
     };
+  }
+
+  private normalizeCedula(value: string) {
+    return value?.toString().replace(/\D/g, "") ?? "";
   }
 
   private async createPasswordResetCode() {

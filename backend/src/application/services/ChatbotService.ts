@@ -1091,26 +1091,26 @@ export class ChatbotService {
   private async loadSourcesByDocumentName(filters: string[]): Promise<SemanticSource[]> {
     if (filters.length === 0) return [];
 
-    const where = filters.map((_, index) => `lower(fd.nombre_documento) LIKE $${index + 1}`).join(" OR ");
+    const where = filters.map((_, index) => `lower(fd."nombreDocumento") LIKE $${index + 1}`).join(" OR ");
     const params = filters.map((filter) => `%${filter.toLowerCase()}%`);
     const rows = (await AppDataSource.query(
       `
       SELECT
         d.id AS document_id,
-        fd.nombre_documento AS document_name,
-        fd.numero_pagina AS page_number,
-        MIN(fd.indice_fragmento) AS chunk_index,
-        string_agg(fd.contenido, ' ' ORDER BY fd.indice_fragmento) AS content
+        fd."nombreDocumento" AS document_name,
+        fd."numeroPagina" AS page_number,
+        MIN(fd."indiceFragmento") AS chunk_index,
+        string_agg(fd.contenido, ' ' ORDER BY fd."indiceFragmento") AS content
       FROM fragmentos_documento fd
-      LEFT JOIN documentos d ON d.nombre_archivo = fd.nombre_documento
+      LEFT JOIN documentos d ON d."archivoNombre" = fd."nombreDocumento"
       WHERE ${where}
-      GROUP BY d.id, fd.nombre_documento, fd.numero_pagina
-      ORDER BY fd.nombre_documento, fd.numero_pagina
+      GROUP BY d.id, fd."nombreDocumento", fd."numeroPagina"
+      ORDER BY fd."nombreDocumento", fd."numeroPagina"
       LIMIT 80
       `,
       params,
     )) as Array<{
-      document_id?: number;
+      document_id?: string;
       document_name: string;
       page_number: number;
       chunk_index: number;
@@ -1482,20 +1482,20 @@ export class ChatbotService {
       `
       SELECT
         d.id AS document_id,
-        fd.nombre_documento AS document_name,
-        fd.numero_pagina AS page_number,
-        MIN(fd.indice_fragmento) AS chunk_index,
-        string_agg(fd.contenido, ' ' ORDER BY fd.indice_fragmento) AS content
+        fd."nombreDocumento" AS document_name,
+        fd."numeroPagina" AS page_number,
+        MIN(fd."indiceFragmento") AS chunk_index,
+        string_agg(fd.contenido, ' ' ORDER BY fd."indiceFragmento") AS content
       FROM fragmentos_documento fd
-      LEFT JOIN documentos d ON d.nombre_archivo = fd.nombre_documento
+      LEFT JOIN documentos d ON d."archivoNombre" = fd."nombreDocumento"
       WHERE ${where}
-      GROUP BY d.id, fd.nombre_documento, fd.numero_pagina
-      ORDER BY fd.nombre_documento, fd.numero_pagina
+      GROUP BY d.id, fd."nombreDocumento", fd."numeroPagina"
+      ORDER BY fd."nombreDocumento", fd."numeroPagina"
       LIMIT 30
       `,
       params,
     )) as Array<{
-      document_id?: number;
+      document_id?: string;
       document_name: string;
       page_number: number;
       chunk_index: number;
@@ -1922,22 +1922,22 @@ export class ChatbotService {
       `
       SELECT
         d.id AS document_id,
-        fd.nombre_documento AS document_name,
-        fd.numero_pagina AS page_number,
-        MIN(fd.indice_fragmento) AS chunk_index,
-        string_agg(fd.contenido, ' ' ORDER BY fd.indice_fragmento) AS content
+        fd."nombreDocumento" AS document_name,
+        fd."numeroPagina" AS page_number,
+        MIN(fd."indiceFragmento") AS chunk_index,
+        string_agg(fd.contenido, ' ' ORDER BY fd."indiceFragmento") AS content
       FROM fragmentos_documento fd
-      LEFT JOIN documentos d ON d.nombre_archivo = fd.nombre_documento
-      WHERE lower(fd.nombre_documento) LIKE '%ruc%'
-        OR lower(fd.nombre_documento) LIKE '%registro%'
+      LEFT JOIN documentos d ON d."archivoNombre" = fd."nombreDocumento"
+      WHERE lower(fd."nombreDocumento") LIKE '%ruc%'
+        OR lower(fd."nombreDocumento") LIKE '%registro%'
         OR lower(fd.contenido) LIKE '%ruc%'
         OR lower(fd.contenido) LIKE '%razon social%'
         OR lower(fd.contenido) LIKE '%razón social%'
-      GROUP BY d.id, fd.nombre_documento, fd.numero_pagina
+      GROUP BY d.id, fd."nombreDocumento", fd."numeroPagina"
       LIMIT 30
       `,
     )) as Array<{
-      document_id?: number;
+      document_id?: string;
       document_name: string;
       page_number: number;
       chunk_index: number;
@@ -2109,13 +2109,13 @@ export class ChatbotService {
     const rows = (await AppDataSource.query(
       `
       SELECT
-        nombre_documento AS document_name,
-        numero_pagina AS page_number,
-        string_agg(contenido, ' ' ORDER BY indice_fragmento) AS content
+        "nombreDocumento" AS document_name,
+        "numeroPagina" AS page_number,
+        string_agg(contenido, ' ' ORDER BY "indiceFragmento") AS content
       FROM fragmentos_documento
-      WHERE nombre_documento = ANY($1)
-        AND numero_pagina = ANY($2)
-      GROUP BY nombre_documento, numero_pagina
+      WHERE "nombreDocumento" = ANY($1)
+        AND "numeroPagina" = ANY($2)
+      GROUP BY "nombreDocumento", "numeroPagina"
       `,
       [documentNames, pageNumbers],
     )) as Array<{ document_name: string; page_number: number; content: string }>;
@@ -2187,13 +2187,13 @@ export class ChatbotService {
     const fragments = (await AppDataSource.query(
       `
       SELECT
-        nombre_documento AS document_name,
-        numero_pagina AS page_number,
-        indice_fragmento AS chunk_index,
+        "nombreDocumento" AS document_name,
+        "numeroPagina" AS page_number,
+        "indiceFragmento" AS chunk_index,
         contenido AS content
       FROM fragmentos_documento
-      WHERE nombre_documento = ANY($1)
-      ORDER BY nombre_documento, numero_pagina, indice_fragmento
+      WHERE "nombreDocumento" = ANY($1)
+      ORDER BY "nombreDocumento", "numeroPagina", "indiceFragmento"
       `,
       [filenames],
     )) as Array<{
@@ -2264,10 +2264,10 @@ export class ChatbotService {
 
     const rows = (await AppDataSource.query(
       `
-      SELECT DISTINCT nombre_documento AS document_name
+      SELECT DISTINCT "nombreDocumento" AS document_name
       FROM fragmentos_documento
-      WHERE lower(nombre_documento) LIKE $1
-      ORDER BY nombre_documento
+      WHERE lower("nombreDocumento") LIKE $1
+      ORDER BY "nombreDocumento"
       `,
       [pattern],
     )) as Array<{ document_name: string }>;
@@ -2294,23 +2294,23 @@ export class ChatbotService {
       filenames.length
         ? `
       SELECT
-        nombre_documento AS document_name,
-        numero_pagina AS page_number,
-        indice_fragmento AS chunk_index,
+        "nombreDocumento" AS document_name,
+        "numeroPagina" AS page_number,
+        "indiceFragmento" AS chunk_index,
         contenido AS content
       FROM fragmentos_documento
-      WHERE nombre_documento = ANY($1)
-      ORDER BY nombre_documento, numero_pagina, indice_fragmento
+      WHERE "nombreDocumento" = ANY($1)
+      ORDER BY "nombreDocumento", "numeroPagina", "indiceFragmento"
       `
         : `
       SELECT
-        nombre_documento AS document_name,
-        numero_pagina AS page_number,
-        indice_fragmento AS chunk_index,
+        "nombreDocumento" AS document_name,
+        "numeroPagina" AS page_number,
+        "indiceFragmento" AS chunk_index,
         contenido AS content
       FROM fragmentos_documento
-      WHERE lower(nombre_documento) LIKE '%na_mina_socios_actuales%'
-      ORDER BY nombre_documento, numero_pagina, indice_fragmento
+      WHERE lower("nombreDocumento") LIKE '%na_mina_socios_actuales%'
+      ORDER BY "nombreDocumento", "numeroPagina", "indiceFragmento"
       `,
       filenames.length ? [filenames] : [],
     )) as Array<{

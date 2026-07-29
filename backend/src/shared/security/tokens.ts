@@ -5,7 +5,7 @@ import type { SignOptions } from "jsonwebtoken";
 import { env } from "../../config/env";
 
 export type AccessTokenPayload = {
-  user_id: number;
+  user_id: string;
   sub: string;
 };
 

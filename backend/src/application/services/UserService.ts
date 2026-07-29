@@ -19,13 +19,14 @@ export class UserService {
     email: string;
     password: string;
   }) {
-    await this.ensureUnique(input.email, input.cedula);
+    const cleanCedula = this.normalizeCedula(input.cedula);
+    await this.ensureUnique(input.email, cleanCedula);
     const socioRole = await this.findRole("SOCIO");
 
     const user = this.users.create({
       nombres: input.nombres,
       apellidos: input.apellidos,
-      cedula: input.cedula ?? null,
+      cedula: cleanCedula,
       email: input.email,
       passwordHash: await bcrypt.hash(input.password, 12),
       isActive: true,
@@ -63,13 +64,13 @@ export class UserService {
     return users.map(userResponse);
   }
 
-  async activate(id: number) {
+  async activate(id: string) {
     const user = await this.findUser(id);
     user.isActive = true;
     return userResponse(await this.users.save(user));
   }
 
-  async deactivate(id: number, currentUserId: number) {
+  async deactivate(id: string, currentUserId: string) {
     if (id === currentUserId) {
       throw new AppError(400, "No puedes desactivar tu propio usuario");
     }
@@ -78,7 +79,7 @@ export class UserService {
     return userResponse(await this.users.save(user));
   }
 
-  async changeRole(id: number, roleName: string, currentUserId: number) {
+  async changeRole(id: string, roleName: string, currentUserId: string) {
     if (id === currentUserId) {
       throw new AppError(400, "No puedes cambiar tu propio rol");
     }
@@ -87,7 +88,7 @@ export class UserService {
     return userResponse(await this.users.save(user));
   }
 
-  async generateTempPassword(id: number) {
+  async generateTempPassword(id: string) {
     const user = await this.findUser(id);
     const tempPassword = randomPassword();
     user.passwordHash = await bcrypt.hash(tempPassword, 12);
@@ -105,6 +106,10 @@ export class UserService {
     }
   }
 
+  private normalizeCedula(value?: string | null) {
+    return value?.toString().replace(/\D/g, "") ?? "";
+  }
+
   private async findRole(name: string) {
     const role = await this.roles.findOne({ where: { name } });
     if (!role) {
@@ -113,7 +118,7 @@ export class UserService {
     return role;
   }
 
-  private async findUser(id: number) {
+  private async findUser(id: string) {
     const user = await this.users.findOne({ where: { id } });
     if (!user) {
       throw new AppError(404, "Usuario no encontrado");

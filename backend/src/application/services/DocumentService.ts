@@ -1,6 +1,8 @@
 import fs from "fs";
 import path from "path";
 
+import { IsNull, Not } from "typeorm";
+
 import { AppDataSource } from "../../config/data-source";
 import { env } from "../../config/env";
 import { DocumentEntity } from "../../infrastructure/persistence/entities/DocumentEntity";
@@ -13,22 +15,35 @@ export class DocumentService {
   private semantic = new SemanticServiceClient();
 
   async list() {
-    const documents = await this.documents.find({ order: { createdAt: "DESC" } });
+    const documents = await this.documents.find({
+      where: { status: Not(IsNull()) },
+      order: { createdAt: "DESC" },
+    });
     return documents.map(documentResponse);
   }
 
-  async upload(file: Express.Multer.File, uploadedById: number) {
+  async upload(file: Express.Multer.File, uploadedById: string) {
     if (!file.originalname.toLowerCase().endsWith(".pdf")) {
       throw new AppError(400, "El archivo debe ser un PDF valido");
     }
 
+    const now = new Date();
     const document = await this.documents.save(
       this.documents.create({
+        code: `CHATBOT-${Date.now()}`,
+        title: file.originalname,
+        type: "CHATBOT",
+        description: "Documento cargado desde la biblioteca documental movil.",
+        date: now,
+        documentStatus: "ACTIVO",
         filename: file.filename,
+        fileUrl: `/static/documents/${file.filename}`,
         filePath: path.join(env.staticRoot, "documents", file.filename),
         uploadedById,
         status: "pendiente",
         errorMessage: null,
+        createdAt: now,
+        updatedAt: now,
       }),
     );
 
@@ -44,7 +59,7 @@ export class DocumentService {
     };
   }
 
-  async delete(documentId: number) {
+  async delete(documentId: string) {
     const document = await this.documents.findOne({ where: { id: documentId } });
     if (!document) {
       throw new AppError(404, "Documento no encontrado");
@@ -56,7 +71,7 @@ export class DocumentService {
     }
 
     await this.semantic.deleteChunks(document.filename).catch(async () => {
-      await AppDataSource.query("DELETE FROM fragmentos_documento WHERE nombre_documento = $1", [
+      await AppDataSource.query('DELETE FROM fragmentos_documento WHERE "nombreDocumento" = $1', [
         document.filename,
       ]);
     });
@@ -68,7 +83,7 @@ export class DocumentService {
     };
   }
 
-  async getFile(documentId: number) {
+  async getFile(documentId: string) {
     const document = await this.documents.findOne({ where: { id: documentId } });
     if (!document) {
       throw new AppError(404, "Documento no encontrado");
@@ -89,7 +104,7 @@ export class DocumentService {
     };
   }
 
-  async getPagePreview(documentId: number, page: number) {
+  async getPagePreview(documentId: string, page: number) {
     if (!Number.isInteger(page) || page < 1) {
       throw new AppError(400, "La pagina solicitada no es valida.");
     }
@@ -139,7 +154,7 @@ export class DocumentService {
       await this.semantic.indexDocument({
         documentId: document.id,
         filename: document.filename,
-        filePath: path.join(process.cwd(), document.filePath),
+        filePath: this.resolveDocumentFilePath(document),
       });
 
       document.status = "completado";

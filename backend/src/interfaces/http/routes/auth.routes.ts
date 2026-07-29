@@ -11,7 +11,7 @@ const service = new AuthService();
 authRouter.post(
   "/login",
   asyncHandler(async (req, res) => {
-    res.json(await service.login(req.body.email, req.body.password));
+    res.json(await service.login(req.body.cedula ?? req.body.email, req.body.password));
   }),
 );
 

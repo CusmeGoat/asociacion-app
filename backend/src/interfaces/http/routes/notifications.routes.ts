@@ -40,6 +40,6 @@ notificationsRouter.patch(
 notificationsRouter.patch(
   "/:id/leer",
   asyncHandler(async (req, res) => {
-    res.json(await service.markAsRead(Number(req.params.id), req.user!.id));
+    res.json(await service.markAsRead(req.params.id, req.user!.id));
   }),
 );

@@ -12,7 +12,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
 
 export function LoginScreen({navigation}: Props) {
   const {login} = useAuth();
-  const [email, setEmail] = useState('');
+  const [cedula, setCedula] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +22,7 @@ export function LoginScreen({navigation}: Props) {
     setLoading(true);
     setError('');
     try {
-      await login(email.trim(), password);
+      await login(cedula.trim(), password);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo iniciar sesion');
     } finally {
@@ -43,16 +43,16 @@ export function LoginScreen({navigation}: Props) {
 
       <AnimatedPanel delay={120} style={loginStyles.formCard}>
         <Text style={loginStyles.formTitle}>Iniciar sesion</Text>
-        <Text style={loginStyles.formSubtitle}>Accede con tu correo y contrasena.</Text>
+        <Text style={loginStyles.formSubtitle}>Accede con tu cedula y contrasena.</Text>
         {error ? <Notice message={error} type="error" /> : null}
         <AppInput
-          label="Correo electronico"
-          icon="email"
-          placeholder="secretaria@10demayo.org"
-          value={email}
-          onChangeText={setEmail}
+          label="Cedula"
+          icon="credit-card"
+          placeholder="0920000000"
+          value={cedula}
+          onChangeText={setCedula}
           autoCapitalize="none"
-          keyboardType="email-address"
+          keyboardType="number-pad"
         />
         <AppInput
           label="Contrasena"

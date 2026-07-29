@@ -34,27 +34,27 @@ usersRouter.get(
 usersRouter.patch(
   "/:id/activate",
   asyncHandler(async (req, res) => {
-    res.json(await service.activate(Number(req.params.id)));
+    res.json(await service.activate(req.params.id));
   }),
 );
 
 usersRouter.patch(
   "/:id/deactivate",
   asyncHandler(async (req, res) => {
-    res.json(await service.deactivate(Number(req.params.id), req.user!.id));
+    res.json(await service.deactivate(req.params.id, req.user!.id));
   }),
 );
 
 usersRouter.patch(
   "/:id/role",
   asyncHandler(async (req, res) => {
-    res.json(await service.changeRole(Number(req.params.id), req.body.role_name, req.user!.id));
+    res.json(await service.changeRole(req.params.id, req.body.role_name, req.user!.id));
   }),
 );
 
 usersRouter.post(
   "/:id/temp-password",
   asyncHandler(async (req, res) => {
-    res.json(await service.generateTempPassword(Number(req.params.id)));
+    res.json(await service.generateTempPassword(req.params.id));
   }),
 );

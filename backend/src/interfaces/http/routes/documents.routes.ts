@@ -12,7 +12,7 @@ const service = new DocumentService();
 documentsRouter.get(
   "/public/:documentId/ver",
   asyncHandler(async (req, res) => {
-    const file = await service.getFile(Number(req.params.documentId));
+    const file = await service.getFile(req.params.documentId);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${file.filename.replace(/"/g, "")}"`);
     res.sendFile(file.absolutePath);
@@ -23,7 +23,7 @@ documentsRouter.get(
   "/public/:documentId/paginas/:page/preview",
   asyncHandler(async (req, res) => {
     const preview = await service.getPagePreview(
-      Number(req.params.documentId),
+      req.params.documentId,
       Number(req.params.page),
     );
     res.setHeader("Content-Type", "image/png");
@@ -61,6 +61,6 @@ documentsRouter.delete(
   "/:documentId",
   authorize("SECRETARIO"),
   asyncHandler(async (req, res) => {
-    res.json(await service.delete(Number(req.params.documentId)));
+    res.json(await service.delete(req.params.documentId));
   }),
 );

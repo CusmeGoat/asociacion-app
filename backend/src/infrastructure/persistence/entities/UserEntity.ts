@@ -1,12 +1,15 @@
 import {
+  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
   JoinTable,
   ManyToMany,
   OneToMany,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
+  UpdateDateColumn,
 } from "typeorm";
+import { randomUUID } from "crypto";
 
 import { AnnouncementEntity } from "./AnnouncementEntity";
 import { DocumentEntity } from "./DocumentEntity";
@@ -15,38 +18,41 @@ import { RoleEntity } from "./RoleEntity";
 
 @Entity({ name: "usuarios" })
 export class UserEntity {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryColumn({ type: "text" })
+  id!: string;
 
-  @Column({ type: "varchar", length: 100 })
+  @Column({ name: "nombre", type: "text" })
   nombres!: string;
 
-  @Column({ type: "varchar", length: 100 })
+  @Column({ name: "apellido", type: "text" })
   apellidos!: string;
 
-  @Column({ type: "varchar", length: 20, nullable: true })
-  cedula!: string | null;
+  @Column({ name: "cedula", type: "varchar" })
+  cedula!: string;
 
-  @Column({ name: "correo", type: "varchar", length: 150, unique: true })
+  @Column({ name: "email", type: "text", nullable: true })
   email!: string;
 
-  @Column({ name: "contrasena_hash", type: "varchar", length: 255 })
+  @Column({ name: "password", type: "text" })
   passwordHash!: string;
 
   @Column({ name: "activo", type: "boolean", default: true })
   isActive!: boolean;
 
-  @Column({ name: "debe_cambiar_contrasena", type: "boolean", default: false })
+  @Column({ name: "debeCambiarContrasena", type: "boolean", default: false })
   mustChangePassword!: boolean;
 
-  @CreateDateColumn({ name: "creado_en", type: "timestamptz" })
+  @CreateDateColumn({ name: "createdAt", type: "timestamp" })
   createdAt!: Date;
+
+  @UpdateDateColumn({ name: "updatedAt", type: "timestamp" })
+  updatedAt!: Date;
 
   @ManyToMany(() => RoleEntity, (role) => role.users, { eager: true })
   @JoinTable({
     name: "roles_usuario",
-    joinColumn: { name: "usuario_id", referencedColumnName: "id" },
-    inverseJoinColumn: { name: "rol_id", referencedColumnName: "id" },
+    joinColumn: { name: "usuarioId", referencedColumnName: "id" },
+    inverseJoinColumn: { name: "rolNombre", referencedColumnName: "name" },
   })
   roles!: RoleEntity[];
 
@@ -58,4 +64,11 @@ export class UserEntity {
 
   @OneToMany(() => NotificationEntity, (notification) => notification.user)
   notifications!: NotificationEntity[];
+
+  @BeforeInsert()
+  ensureId() {
+    if (!this.id) {
+      this.id = randomUUID();
+    }
+  }
 }

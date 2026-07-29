@@ -1,21 +1,23 @@
 import {
+  BeforeInsert,
   Column,
   CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
 } from "typeorm";
+import { randomUUID } from "crypto";
 
 import { UserEntity } from "./UserEntity";
 
 @Entity({ name: "notificaciones" })
 export class NotificationEntity {
-  @PrimaryGeneratedColumn()
-  id!: number;
+  @PrimaryColumn({ type: "text" })
+  id!: string;
 
-  @Column({ name: "usuario_id", type: "integer" })
-  userId!: number;
+  @Column({ name: "usuarioId", type: "text" })
+  userId!: string;
 
   @Column({ name: "titulo", type: "varchar", length: 200 })
   title!: string;
@@ -23,19 +25,26 @@ export class NotificationEntity {
   @Column({ name: "mensaje", type: "varchar", length: 500 })
   message!: string;
 
-  @Column({ name: "tipo_anuncio", type: "varchar", length: 50 })
+  @Column({ name: "tipoAnuncio", type: "varchar" })
   announcementType!: string;
 
-  @Column({ name: "anuncio_id", type: "integer", nullable: true })
-  announcementId!: number | null;
+  @Column({ name: "anuncioId", type: "text", nullable: true })
+  announcementId!: string | null;
 
   @Column({ name: "leido", type: "boolean", default: false })
   isRead!: boolean;
 
-  @CreateDateColumn({ name: "creado_en", type: "timestamptz" })
+  @CreateDateColumn({ name: "createdAt", type: "timestamptz" })
   createdAt!: Date;
 
   @ManyToOne(() => UserEntity, (user) => user.notifications)
-  @JoinColumn({ name: "usuario_id" })
+  @JoinColumn({ name: "usuarioId" })
   user!: UserEntity;
+
+  @BeforeInsert()
+  ensureId() {
+    if (!this.id) {
+      this.id = randomUUID();
+    }
+  }
 }
