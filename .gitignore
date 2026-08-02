@@ -60,3 +60,13 @@ static/uploads/
 # OS
 .DS_Store
 Thumbs.db
+
+# Environment files by environment
+.env.local
+.env.production
+backend/.env.local
+backend/.env.production
+semantic-service/.env.local
+semantic-service/.env.production
+mobile/.env.local
+mobile/.env.production

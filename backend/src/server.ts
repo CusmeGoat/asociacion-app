@@ -12,8 +12,8 @@ async function bootstrap() {
   await initializeDatabase();
 
   const app = createApp();
-  app.listen(env.port, () => {
-    console.log(`Node API escuchando en http://127.0.0.1:${env.port}`);
+  app.listen(env.port, env.host, () => {
+    console.log(`Node API escuchando en http://${env.host}:${env.port}`);
   });
 }
 

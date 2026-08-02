@@ -1,0 +1,10 @@
+venv
+.venv
+venv_semantic
+__pycache__
+app/__pycache__
+.env
+.env.local
+.env.production
+.tessdata
+*.log
